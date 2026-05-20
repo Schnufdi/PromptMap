@@ -1036,6 +1036,64 @@ textarea, input { font-family: var(--font-body); }
 
 
 /* ============================================================
+   ARC MINI — collapsed indicator on canvas
+   ============================================================ */
+.arc-mini {
+    position: absolute; top: 14px; left: 14px;
+    display: flex; align-items: center; gap: 7px;
+    padding: 6px 12px 6px 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-sm);
+    border-radius: var(--r-full);
+    box-shadow: var(--shadow-sm);
+    z-index: 10; cursor: pointer;
+    font-size: 12px; color: var(--text-secondary);
+    white-space: nowrap; max-width: 300px;
+    opacity: 0; pointer-events: none;
+    transition: opacity var(--ease-med), background var(--ease-fast);
+}
+.arc-mini.visible { opacity: 1; pointer-events: all; }
+.arc-mini:hover { background: var(--bg-surface); }
+.arc-mini-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--burgundy); flex-shrink: 0;
+}
+.arc-mini-text {
+    flex: 1; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+}
+.arc-mini-open {
+    font-size: 11px; color: var(--text-muted); flex-shrink: 0;
+}
+
+
+/* ============================================================
+   QUESTION PROGRESS BAR
+   ============================================================ */
+.q-progress {
+    height: 2px; background: var(--border-sm);
+    border-radius: 1px; margin-bottom: 18px; overflow: hidden;
+}
+.q-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--burgundy), var(--blue-grey));
+    border-radius: 1px;
+    transition: width 420ms ease;
+}
+
+
+/* ============================================================
+   NODE EDIT HIGHLIGHT
+   ============================================================ */
+@keyframes editPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(107,139,158,0.5); }
+    70%  { box-shadow: 0 0 0 8px rgba(107,139,158,0); }
+    100% { box-shadow: 0 0 0 0 rgba(107,139,158,0); }
+}
+.node-editing .node-inner { animation: editPulse 1s ease 2; }
+
+
+/* ============================================================
    RESPONSIVE — MOBILE
    ============================================================ */
 @media (max-width: 760px) {
@@ -1187,6 +1245,13 @@ textarea, input { font-family: var(--font-body); }
                 <div class="canvas-empty-title">Your thought map</div>
                 <div class="canvas-empty-sub">Enter your rough idea in the panel on the right to begin.</div>
             </div>
+
+            <!-- Arc mini — shown when arc panel is collapsed -->
+            <div class="arc-mini" id="arcMini" onclick="toggleArcPanel()">
+                <div class="arc-mini-dot"></div>
+                <span class="arc-mini-text" id="arcMiniText">Prompt Arc</span>
+                <span class="arc-mini-open">‹ open</span>
+            </div>
         </main><!-- /canvas -->
 
 
@@ -1227,6 +1292,7 @@ textarea, input { font-family: var(--font-body); }
                 <div class="q-step" id="qStep">Question 1 of ~8</div>
             </div>
             <div class="q-body hidden" id="qBody">
+                <div class="q-progress"><div class="q-progress-fill" id="qProgressFill" style="width:0%"></div></div>
                 <div class="q-text" id="qText"></div>
                 <div class="q-why" id="qWhy"></div>
                 <div class="chips-label">Suggested answers</div>
@@ -1366,7 +1432,7 @@ textarea, input { font-family: var(--font-body); }
 
 
 <!-- ====================================================
-     JAVASCRIPT — Chunks 2+ (session engine)
+     JAVASCRIPT — Chunks 2 · 3 · 4
 ==================================================== -->
 <script>
 'use strict';
@@ -1375,86 +1441,237 @@ textarea, input { font-family: var(--font-body); }
    CONSTANTS
    ============================================================ */
 const STAGE_NAMES = [
-    'Seed idea', 'Destination', 'Audience', 'Outcome',
-    'Format', 'Tone / style', 'Constraints', 'Success criteria',
-    'Prompt-ready', 'Excellent prompt'
+    'Seed idea','Destination','Audience','Outcome',
+    'Format','Tone / style','Constraints','Success criteria',
+    'Prompt-ready','Excellent prompt'
 ];
-
 const QUALITY_LABELS = [
-    'Waiting…', 'Rough idea', 'Taking shape',
-    'Strong direction', 'Prompt-ready', 'Excellent prompt'
+    'Waiting…','Rough idea','Taking shape',
+    'Strong direction','Prompt-ready','Excellent prompt'
 ];
-
 const DESTINATIONS = [
-    {
-        id: 'build', icon: '⬡',
-        label: 'Build something',
-        desc: 'Apps, tools, prototypes, websites, products',
-        keywords: ['build','create','make','develop','prototype','app','website','tool',
-                   'product','dashboard','landing','system','platform','interface','code',
-                   'implement','launch','startup','saas','plugin','widget','work coach','coach']
-    },
-    {
-        id: 'analyse', icon: '◎',
-        label: 'Analyse something',
-        desc: 'Audits, critiques, evaluations, reviews',
-        keywords: ['analyse','analyze','audit','review','critique','evaluate','assess',
-                   'examine','investigate','diagnose','benchmark','compare','gap analysis',
-                   'competitor analysis','analysis']
-    },
-    {
-        id: 'write', icon: '✦',
-        label: 'Write something',
-        desc: 'Copy, essays, scripts, emails, proposals',
-        keywords: ['write','draft','essay','article','blog','email','script','copy',
-                   'content','narrative','letter','proposal','lyrics','story','post',
-                   'newsletter','pitch deck','pitch','speech','poem']
-    },
-    {
-        id: 'design', icon: '◈',
-        label: 'Design something',
-        desc: 'Visual direction, UX, brand, interfaces',
-        keywords: ['design','visual','ui','ux','layout','aesthetic','look and feel',
-                   'identity','logo','typography','colour','color','luxury landing',
-                   'landing page design','brand identity']
-    },
-    {
-        id: 'research', icon: '◉',
-        label: 'Research something',
-        desc: 'Market scans, competitor intel, deep dives',
-        keywords: ['research','investigate','study','explore','understand','learn about',
-                   'find out','market research','competitor research','survey','scan']
-    },
-    {
-        id: 'strategise', icon: '⊞',
-        label: 'Strategise something',
-        desc: 'Strategy, positioning, decisions, planning',
-        keywords: ['strategy','strategise','strategize','plan','roadmap','positioning',
-                   'go-to-market','business plan','decision','framework','approach',
-                   'brand strategy','go to market']
-    }
+    { id:'build',      icon:'⬡', label:'Build something',      desc:'Apps, tools, prototypes, websites, products',
+      keywords:['build','create','make','develop','prototype','app','website','tool','product','dashboard',
+                'landing','system','platform','interface','code','implement','launch','startup','saas',
+                'plugin','widget','work coach','coach'] },
+    { id:'analyse',    icon:'◎', label:'Analyse something',     desc:'Audits, critiques, evaluations, reviews',
+      keywords:['analyse','analyze','audit','review','critique','evaluate','assess','examine',
+                'investigate','diagnose','benchmark','compare','gap analysis','competitor analysis','analysis'] },
+    { id:'write',      icon:'✦', label:'Write something',       desc:'Copy, essays, scripts, emails, proposals',
+      keywords:['write','draft','essay','article','blog','email','script','copy','content','narrative',
+                'letter','proposal','lyrics','story','post','newsletter','pitch deck','pitch','speech','poem'] },
+    { id:'design',     icon:'◈', label:'Design something',      desc:'Visual direction, UX, brand, interfaces',
+      keywords:['design','visual','ui','ux','layout','aesthetic','look and feel','identity','logo',
+                'typography','colour','color','luxury landing','landing page design','brand identity'] },
+    { id:'research',   icon:'◉', label:'Research something',    desc:'Market scans, competitor intel, deep dives',
+      keywords:['research','investigate','study','explore','understand','learn about','find out',
+                'market research','competitor research','survey','scan'] },
+    { id:'strategise', icon:'⊞', label:'Strategise something',  desc:'Strategy, positioning, decisions, planning',
+      keywords:['strategy','strategise','strategize','plan','roadmap','positioning','go-to-market',
+                'business plan','decision','framework','approach','brand strategy','go to market'] }
 ];
+const INGREDIENTS = ['Audience','Outcome','Format','Tone','Context','Constraints','Success criteria'];
 
-const INGREDIENTS = [
-    'Audience', 'Outcome', 'Format', 'Tone',
-    'Context', 'Constraints', 'Success criteria'
-];
+/* ============================================================
+   QUESTION BANKS  (7 per destination)
+   answerKey  → slot in answers{}
+   parentStrategy → getParentNode() logic
+   ============================================================ */
+const QUESTION_BANKS = {
+    build: [
+        { id:'audience',      text:'Who is this for?',
+          why:'Defining the audience determines tone, depth, feature set, and what "good" looks like. Without this, Claude defaults to generic solutions.',
+          chips:['Senior professionals','Founders & entrepreneurs','Technical developers','Creative professionals','General consumers'],
+          category:'Audience', answerKey:'audience', parentStrategy:'destination' },
+        { id:'outcome',       text:'What should it help them do?',
+          why:'The core job-to-be-done anchors every product and design decision. Claude needs to know what success means for the user.',
+          chips:['Think through complex challenges','Make faster, better decisions','Organise and prioritise work','Generate creative options','Reflect and improve over time'],
+          category:'Outcome', answerKey:'outcome', parentStrategy:'audience' },
+        { id:'format',        text:'What should Claude actually produce?',
+          why:'Without a clear output format, Claude decides for itself — often producing something that needs significant rework.',
+          chips:['Working HTML/CSS/JS prototype','UX flows and wireframe brief','Feature specification doc','Technical architecture overview','Full product brief with roadmap'],
+          category:'Format', answerKey:'format', parentStrategy:'outcome' },
+        { id:'tone',          text:'What should the experience feel like?',
+          why:'The emotional quality shapes every design decision — layout, typography, colour, interaction model, and copy tone.',
+          chips:['Premium and considered','Calm and focused','Bold and energetic','Warm and human','Minimal and invisible'],
+          category:'Tone', answerKey:'tone', parentStrategy:'destination' },
+        { id:'context',       text:'What should the first version include?',
+          why:'Scoping the MVP prevents Claude from building something overengineered, bloated, or missing the core loop.',
+          chips:['One focused core feature only','Onboarding + core interaction','Input → thinking → output loop','Interactive branching experience','Dashboard with key actions'],
+          category:'Scope', answerKey:'context', parentStrategy:'outcome' },
+        { id:'constraints',   text:'What should it avoid?',
+          why:'Constraints steer Claude away from the most common failure modes: clutter, generic layouts, broken interactions.',
+          chips:['No generic chatbot interface','No dashboard clutter','No external dependencies','No backend required','Avoid visual noise'],
+          category:'Constraints', answerKey:'constraints', parentStrategy:'destination' },
+        { id:'successcriteria', text:'What does a genuinely great output look like?',
+          why:'Without a success bar, Claude aims for acceptable rather than excellent. This is the most underused prompt ingredient.',
+          chips:['Immediately usable without edits','Feels professionally designed','Runs from a single file','Core interaction fully working','Specific and non-generic throughout'],
+          category:'Success criteria', answerKey:'successcriteria', parentStrategy:'destination' }
+    ],
+    analyse: [
+        { id:'subject',       text:'What exactly should be analysed?',
+          why:'The more specific the subject, the more useful the analysis. Vague subjects produce vague critiques.',
+          chips:['A product or service','A business strategy or plan','A piece of content or copy','A market or competitive landscape','A specific decision or proposal'],
+          category:'Subject', answerKey:'context', parentStrategy:'destination' },
+        { id:'decision',      text:'What decision should this analysis support?',
+          why:'Analysis without a decision context produces interesting observations with no actionable conclusions.',
+          chips:['Whether to invest or proceed','How to improve or fix it','Whether it will work in practice','Where the biggest gaps are','How it compares to alternatives'],
+          category:'Outcome', answerKey:'outcome', parentStrategy:'subject' },
+        { id:'audience',      text:'Who is reading this analysis?',
+          why:'The audience determines depth, jargon level, and whether the output should be balanced or blunt.',
+          chips:['Founders and senior leadership','Investors or board members','Practitioners and specialists','External clients or partners','Personal use only'],
+          category:'Audience', answerKey:'audience', parentStrategy:'destination' },
+        { id:'bluntness',     text:'How critical or blunt should the review be?',
+          why:'Without guidance, Claude defaults to diplomatic and balanced. Specify if you need honest, unfiltered analysis.',
+          chips:['Blunt and direct — no softening','Honest but constructive','Balanced pros and cons','Positive with risks flagged','Executive-friendly summary'],
+          category:'Tone', answerKey:'tone', parentStrategy:'decision' },
+        { id:'criteria',      text:'What lens or criteria should the analysis use?',
+          why:'Criteria focus the analysis and prevent Claude from evaluating the wrong dimensions.',
+          chips:['Commercial viability and revenue','User experience and desirability','Technical feasibility','Strategic fit and positioning','Risk and downside scenarios'],
+          category:'Constraints', answerKey:'constraints', parentStrategy:'destination' },
+        { id:'format',        text:'What format should the output take?',
+          why:'A well-structured analysis is 10× more useful than a wall of prose.',
+          chips:['Structured scorecard with ratings','Strengths and weaknesses breakdown','Narrative executive summary','Detailed category breakdown','One-page decision memo'],
+          category:'Format', answerKey:'format', parentStrategy:'destination' },
+        { id:'successcriteria', text:'What makes this analysis genuinely useful?',
+          why:'Useful analysis produces a clear recommendation, not just observations.',
+          chips:['Clear verdict or recommendation','Specific, actionable insights','Identifies root causes not symptoms','Prioritised by importance','Honest about uncertainty'],
+          category:'Success criteria', answerKey:'successcriteria', parentStrategy:'destination' }
+    ],
+    write: [
+        { id:'format',        text:'What are we writing?',
+          why:'Different formats have completely different conventions, lengths, and success criteria. Be specific.',
+          chips:['Essay or long-form article','Email or outreach message','Sales or landing page copy','Pitch deck narrative','Social post or thread'],
+          category:'Format', answerKey:'format', parentStrategy:'destination' },
+        { id:'audience',      text:'Who is this written for?',
+          why:'The reader determines vocabulary, assumed knowledge, emotional register, and what they need to believe by the end.',
+          chips:['Senior decision-makers','Technical specialists','General consumers','Investors or stakeholders','Peers or community members'],
+          category:'Audience', answerKey:'audience', parentStrategy:'format' },
+        { id:'outcome',       text:'What should it make the reader feel or do?',
+          why:"All great writing moves the reader toward something. Without a goal, Claude writes interesting content that changes nothing.",
+          chips:['Take an immediate action','Change their perspective','Feel inspired or motivated','Trust the author or brand','Make a purchase or commit'],
+          category:'Outcome', answerKey:'outcome', parentStrategy:'audience' },
+        { id:'tone',          text:'What tone or voice should it have?',
+          why:'Tone is the single biggest differentiator between generic content and something that feels distinctly authored.',
+          chips:['Sharp, direct, and opinionated','Warm and personal','Authoritative and expert','Playful and irreverent','Calm and considered'],
+          category:'Tone', answerKey:'tone', parentStrategy:'audience' },
+        { id:'context',       text:'What angle or hook makes this interesting?',
+          why:'The hook transforms a topic into a story. Without it, Claude writes competent but forgettable content.',
+          chips:['A contrarian or unexpected take','A specific story or example','A counterintuitive insight','A strong opening provocation','A clear framework or structure'],
+          category:'Angle', answerKey:'context', parentStrategy:'outcome' },
+        { id:'constraints',   text:'What should it avoid?',
+          why:'Constraints prevent the most common writing failures: clichés, hedging, weak openings, corporate-speak.',
+          chips:['No clichés or filler phrases','No hedging or qualifying language','Avoid listicle structure','No passive voice','No corporate-speak'],
+          category:'Constraints', answerKey:'constraints', parentStrategy:'destination' },
+        { id:'successcriteria', text:'What does genuinely good writing look like here?',
+          why:'The difference between good and excellent writing is clarity about what excellent means in this specific context.',
+          chips:['Every sentence earns its place','The opening is impossible to ignore','The reader takes the intended action','Sounds like a real person wrote it','Specific, not generic throughout'],
+          category:'Success criteria', answerKey:'successcriteria', parentStrategy:'destination' }
+    ],
+    design: [
+        { id:'what',          text:'What are we designing?',
+          why:'Design outputs range from a brand identity to a single screen. Specificity determines the depth Claude can give.',
+          chips:['Brand identity system','Landing page or website','Product UI or dashboard','Editorial or print layout','Interior or spatial concept'],
+          category:'Format', answerKey:'format', parentStrategy:'destination' },
+        { id:'feel',          text:'What should it feel like?',
+          why:'Emotional quality is the starting point for all visual decisions. Everything else flows from the feeling.',
+          chips:['Premium and understated','Bold and confident','Warm and approachable','Minimal and architectural','Playful and energetic'],
+          category:'Tone', answerKey:'tone', parentStrategy:'what' },
+        { id:'audience',      text:'Who is the audience?',
+          why:"Design that doesn't speak to its audience fails regardless of quality. Every visual decision should serve this person.",
+          chips:['High-net-worth individuals','Knowledge workers','Young creative consumers','Technical specialists','Mass market consumers'],
+          category:'Audience', answerKey:'audience', parentStrategy:'destination' },
+        { id:'references',    text:'What visual references or worlds matter?',
+          why:'References communicate aesthetic intent faster and more precisely than any description can.',
+          chips:['Specific brands to draw from','A particular era or movement','A medium (film, fashion, architecture)','Competitor to reference or avoid','No references — be original'],
+          category:'Context', answerKey:'context', parentStrategy:'feel' },
+        { id:'avoid',         text:'What should it avoid looking like?',
+          why:'Knowing what to avoid protects against generic defaults and category clichés.',
+          chips:['Generic SaaS aesthetic','Corporate or institutional feel','Over-designed and cluttered','Too minimal or lifeless','Cliché for this sector'],
+          category:'Constraints', answerKey:'constraints', parentStrategy:'destination' },
+        { id:'output',        text:'What should Claude produce?',
+          why:'Design direction can range from a written brief to CSS variables to a full art direction document.',
+          chips:['Written visual direction brief','Typography and colour recommendations','Component-level UI specs','Moodboard description and rationale','Full implementation in code'],
+          category:'Outcome', answerKey:'outcome', parentStrategy:'destination' },
+        { id:'successcriteria', text:'What makes this design direction excellent?',
+          why:"Without a bar, Claude defaults to safe. Define what excellent means for this specific project.",
+          chips:['Feels original and ownable','Immediately communicates the brand world','Specific enough to act on','Stands apart from the category','Visually coherent end-to-end'],
+          category:'Success criteria', answerKey:'successcriteria', parentStrategy:'destination' }
+    ],
+    research: [
+        { id:'topic',         text:'What topic should be researched?',
+          why:'A precisely framed topic produces focused, useful findings rather than a general overview.',
+          chips:['A specific market or industry','A technology or approach','A competitor or company','A user behaviour or trend','A regulatory or policy area'],
+          category:'Context', answerKey:'context', parentStrategy:'destination' },
+        { id:'question',      text:'What specific question should the research answer?',
+          why:'A research question keeps Claude focused on what matters instead of producing an encyclopaedic overview.',
+          chips:['Is there a real opportunity here?','How do leading players approach this?','What are the key risks and unknowns?','What does best-in-class look like?','What has changed recently and why?'],
+          category:'Outcome', answerKey:'outcome', parentStrategy:'topic' },
+        { id:'audience',      text:'Who will use this research?',
+          why:'The audience determines appropriate depth, format, and level of assumed knowledge.',
+          chips:['Founders making a product decision','Investors evaluating an opportunity','Senior leaders setting strategy','Practitioners and specialists','General readers'],
+          category:'Audience', answerKey:'audience', parentStrategy:'destination' },
+        { id:'depth',         text:'How deep should the research go?',
+          why:'Depth affects length, sourcing rigour, and analytical quality of the output.',
+          chips:['High-level overview and orientation','Substantive synthesis of key themes','Deep dive with multiple angles','Comparative analysis of options','Hypothesis-driven exploration'],
+          category:'Tone', answerKey:'tone', parentStrategy:'question' },
+        { id:'format',        text:'What format should the output take?',
+          why:'Research in the right format is immediately usable. Without guidance, Claude defaults to prose.',
+          chips:['Executive briefing (one page)','Structured report with sections','Bulleted insight summary','Competitive landscape matrix','Q&A addressing specific questions'],
+          category:'Format', answerKey:'format', parentStrategy:'destination' },
+        { id:'constraints',   text:'Any important constraints or caveats?',
+          why:'Constraints prevent Claude from including outdated, irrelevant, or low-quality information.',
+          chips:['Focus on the last 2–3 years only','Prioritise primary sources','Flag uncertainty where relevant','Avoid speculation without evidence','Keep to the most important 20%'],
+          category:'Constraints', answerKey:'constraints', parentStrategy:'destination' },
+        { id:'successcriteria', text:'What makes this research genuinely useful?',
+          why:'Useful research changes what you believe or decide. Unhelpful research is just information.',
+          chips:['Clear insight, not just information','Leads to a decision or action','Flags what is unknown','Prioritised by importance','Synthesised, not just compiled'],
+          category:'Success criteria', answerKey:'successcriteria', parentStrategy:'destination' }
+    ],
+    strategise: [
+        { id:'goal',          text:'What goal are we strategising around?',
+          why:"Strategy without a clear goal produces recommendations that can't be evaluated. The goal is the anchor.",
+          chips:['Growing revenue or market share','Entering a new market','Repositioning the brand or product','Navigating a challenge or crisis','Making a high-stakes decision'],
+          category:'Outcome', answerKey:'outcome', parentStrategy:'destination' },
+        { id:'context',       text:'What context does the strategist need?',
+          why:'Strategic recommendations without context are generic frameworks, not real strategy.',
+          chips:['Current market position and size','Key competitors and their moves','Available resources and constraints','The core customer and their needs','What has already been tried'],
+          category:'Context', answerKey:'context', parentStrategy:'goal' },
+        { id:'audience',      text:'Who is making or reading this strategy?',
+          why:'A solo founder needs different strategy output than a board or investor audience.',
+          chips:['Solo founder or small team','Executive leadership team','Investors or board members','External advisors','Personal decision-making'],
+          category:'Audience', answerKey:'audience', parentStrategy:'destination' },
+        { id:'constraints',   text:'What constraints must the strategy respect?',
+          why:'Unconstrained strategy is usually impractical. Real constraints produce real, actionable recommendations.',
+          chips:['Limited budget or runway','Small team, limited bandwidth','Regulatory or compliance limits','Existing commitments or contracts','Competitive timing pressure'],
+          category:'Constraints', answerKey:'constraints', parentStrategy:'goal' },
+        { id:'approach',      text:'What kind of strategic thinking is needed?',
+          why:'Different situations call for completely different modes of thinking and recommendation styles.',
+          chips:['Bold and contrarian options','Conservative and risk-managed','Generate multiple scenarios','Critique the current approach','Find the highest-leverage move'],
+          category:'Tone', answerKey:'tone', parentStrategy:'destination' },
+        { id:'format',        text:'What should the strategic output look like?',
+          why:'Strategy can be a one-page brief, a set of options, or a detailed framework. The format determines usefulness.',
+          chips:['Single clear recommendation','Three strategic options compared','Framework or decision matrix','Narrative strategic memo','Action plan with priorities'],
+          category:'Format', answerKey:'format', parentStrategy:'destination' },
+        { id:'successcriteria', text:'What does excellent strategic advice look like here?',
+          why:"Strategy is excellent when it changes what you'd actually do, not just confirms what you thought.",
+          chips:['Challenges my current assumptions','Specific, not generic','Has a clear point of view','Commercially grounded','Leads directly to a decision'],
+          category:'Success criteria', answerKey:'successcriteria', parentStrategy:'destination' }
+    ]
+};
 
 
 /* ============================================================
    SESSION STATE
    ============================================================ */
 const session = {
-    seedIdea: '',
-    destination: null,       // destination id
-    questionIndex: 0,
-    answeredCount: 0,
-    calibrationCount: 0,
-    started: false,
-    awaitingDest: false
+    seedIdea: '', destination: null,
+    answeredCount: 0, calibrationCount: 0,
+    started: false, awaitingDest: false,
+    editingNodeId: null, branchFromNodeId: null
 };
 
-let nodes = [];              // { id, type, category, label, x, y, parentId }
+let nodes = [];
 let _nodeId = 0;
 const nextId = () => 'n' + (++_nodeId);
 
@@ -1462,21 +1679,13 @@ const answers = {
     destination: null, audience: null, outcome: null,
     format: null, tone: null, context: null,
     constraints: null, successcriteria: null,
-    avoid: null, examples: null, calibrations: []
+    calibrations: []
 };
 
-let activeNodeId  = null;
 let tooltipNodeId = null;
+let qualityScore   = 0;
 
-const arc = {
-    stage: 0,
-    direction: '',
-    clarified: [],
-    missing: [...INGREDIENTS],
-    nextMove: ''
-};
-
-let qualityScore = 0;
+const arc = { stage: 0, direction: '', clarified: [], missing: [...INGREDIENTS], nextMove: '' };
 
 
 /* ============================================================
@@ -1484,10 +1693,10 @@ let qualityScore = 0;
    ============================================================ */
 function inferDestinationType(idea) {
     const text = idea.toLowerCase();
-    let best = 'build', bestScore = 0;
+    let best = 'build', top = 0;
     DESTINATIONS.forEach(d => {
-        const score = d.keywords.reduce((s, kw) => s + (text.includes(kw) ? 1 : 0), 0);
-        if (score > bestScore) { bestScore = score; best = d.id; }
+        const s = d.keywords.reduce((acc, kw) => acc + (text.includes(kw) ? 1 : 0), 0);
+        if (s > top) { top = s; best = d.id; }
     });
     return best;
 }
@@ -1500,27 +1709,19 @@ function startSession() {
     const idea = document.getElementById('ideaTextarea').value.trim();
     if (!idea) { document.getElementById('ideaTextarea').focus(); return; }
 
-    session.seedIdea  = idea;
-    session.started   = true;
+    session.seedIdea = idea;
+    session.started  = true;
     session.awaitingDest = true;
 
-    // Central node
-    createNode({ type: 'central', category: 'Seed idea', label: idea, parentId: null, x: 0, y: 0 });
-
-    // Hide canvas empty state
+    createNode({ type:'central', category:'Seed idea', label:idea, parentId:null, x:0, y:0 });
     document.getElementById('canvasEmpty').classList.add('hidden');
     renderMindMap();
-
-    // Show destination select
     showDestinationSelect(inferDestinationType(idea));
 
-    // Arc: stage 0 done, stage 1 current
-    arc.stage     = 1;
+    arc.stage = 1;
     arc.direction = `Starting with: "${trunc(idea, 65)}" — choosing the right prompt destination.`;
     arc.nextMove  = 'Select what kind of output you want Claude to produce.';
-    updateArc();
-    renderArcStages(1, 0);
-    setQuality(1);
+    updateArc(); renderArcStages(1, 0); setQuality(1);
 }
 
 
@@ -1529,36 +1730,34 @@ function startSession() {
    ============================================================ */
 function showDestinationSelect(inferredId) {
     document.getElementById('ideaWrap').classList.add('hidden');
+    document.getElementById('qHeader').classList.add('hidden');
+    document.getElementById('qBody').classList.add('hidden');
 
-    const wrap = document.getElementById('destWrap');
     const dest = DESTINATIONS.find(d => d.id === inferredId) || DESTINATIONS[0];
-
+    const wrap = document.getElementById('destWrap');
     wrap.innerHTML = `
         <div class="dest-idea-echo">"${esc(trunc(session.seedIdea, 90))}"</div>
         <div class="dest-select-title">What should Claude produce?</div>
         <div class="dest-select-sub">We detected: <strong>${esc(dest.label)}</strong>. Confirm or pick a different destination.</div>
         <div class="dest-grid" id="destGrid">
             ${DESTINATIONS.map(d => `
-                <button class="dest-card${d.id === inferredId ? ' selected' : ''}"
-                        data-dest="${d.id}"
+                <button class="dest-card${d.id === inferredId ? ' selected' : ''}" data-dest="${d.id}"
                         onclick="selectDestCard(this,'${d.id}')">
                     <span class="dest-card-icon">${d.icon}</span>
                     <span class="dest-card-name">${esc(d.label)}</span>
                     <span class="dest-card-desc">${esc(d.desc)}</span>
                 </button>`).join('')}
         </div>
-        <button class="btn-confirm-dest" onclick="confirmDestination()">Confirm destination →</button>
-    `;
-
+        <button class="btn-confirm-dest" onclick="confirmDestination()">Confirm destination →</button>`;
     wrap.classList.remove('hidden');
     wrap.classList.add('fade-in');
     session.destination = inferredId;
 }
 
-function selectDestCard(el, destId) {
+function selectDestCard(el, id) {
     document.querySelectorAll('.dest-card').forEach(c => c.classList.remove('selected'));
     el.classList.add('selected');
-    session.destination = destId;
+    session.destination = id;
 }
 
 function confirmDestination() {
@@ -1567,232 +1766,223 @@ function confirmDestination() {
     answers.destination = dest.label;
     session.awaitingDest = false;
 
-    // Hide dest select
     document.getElementById('destWrap').classList.add('hidden');
-
-    // Show top-bar badge
     document.getElementById('destBadgeText').textContent = dest.label;
     document.getElementById('destBadge').classList.remove('hidden');
 
-    // Add destination node (sibling index 0 of 1 from central)
-    createNode({
-        type: 'dest', category: 'Destination', label: dest.label,
-        parentId: nodes[0].id, siblingIndex: 0, totalSiblings: 1
-    });
+    createNode({ type:'dest', category:'Destination', label:dest.label,
+                 parentId:nodes[0].id, siblingIndex:0, totalSiblings:1 });
     renderMindMap();
 
-    // Arc
-    arc.stage     = 2;
-    arc.direction = `Building a "${dest.label}" prompt — questions will focus on what Claude needs to produce something excellent.`;
+    arc.stage = 2;
     arc.clarified = ['Destination: ' + dest.label];
     arc.missing   = getMissingIngredients();
-    arc.nextMove  = 'Who is this for? Audience shapes tone, depth, and framing.';
-    updateArc();
-    renderArcStages(2, 1);
-    setQuality(2);
+    arc.direction = generateArcDirection();
+    arc.nextMove  = generateArcNextMove();
+    updateArc(); renderArcStages(2, 1); setQuality(2);
+    updateArcMini();
 
-    // Show first question (Chunk 3 replaces this stub)
-    showStubQuestion(0);
+    const first = getNextBestQuestion();
+    if (first) renderQuestion(first);
 }
 
 
 /* ============================================================
-   QUESTION DISPLAY — stub (Chunk 3 replaces with full engine)
+   QUESTION ENGINE
    ============================================================ */
-const STUB_QUESTIONS = [
-    {
-        text: 'Who is this for?',
-        why:  'Defining the audience shapes the tone, depth, and specificity of the final Claude prompt.',
-        chips: ['Senior professionals', 'Founders & entrepreneurs', 'Technical developers', 'Creative professionals', 'General consumers'],
-        category: 'Audience', answerKey: 'audience'
-    },
-    {
-        text: 'What should it help them do or decide?',
-        why:  'The outcome anchors the entire prompt — without it Claude optimises for the wrong goal.',
-        chips: ['Think through complex challenges', 'Make better decisions faster', 'Organise and prioritise work', 'Generate ideas and options', 'Reflect and improve performance'],
-        category: 'Outcome', answerKey: 'outcome'
-    },
-    {
-        text: 'What should the final output look like?',
-        why:  'Format instructions ensure Claude structures the output in a way that is immediately usable.',
-        chips: ['Working prototype / code', 'Structured written doc', 'Bullet-point summary', 'Step-by-step plan', 'Visual direction brief'],
-        category: 'Format', answerKey: 'format'
-    },
-    {
-        text: 'What tone or style should it have?',
-        why:  'Tone transforms a generic output into one that fits the brand, context, and audience expectations.',
-        chips: ['Premium and polished', 'Warm and conversational', 'Direct and concise', 'Bold and opinionated', 'Calm and considered'],
-        category: 'Tone', answerKey: 'tone'
-    },
-    {
-        text: 'What are the key constraints or things to avoid?',
-        why:  'Constraints prevent Claude from going in the wrong direction and save iteration cycles.',
-        chips: ['No generic filler', 'Keep it self-contained', 'Avoid technical jargon', 'No external dependencies', 'Avoid being overly formal'],
-        category: 'Constraints', answerKey: 'constraints'
-    },
-    {
-        text: 'What does a genuinely great output look like?',
-        why:  'Success criteria give Claude a target — without them the output will be average rather than excellent.',
-        chips: ['Immediately usable without edits', 'Feels like expert work', 'Specific and non-generic', 'Visually compelling', 'Solves the real problem'],
-        category: 'Success criteria', answerKey: 'successcriteria'
-    }
-];
+function getNextBestQuestion() {
+    const bank = QUESTION_BANKS[session.destination] || QUESTION_BANKS.build;
+    return bank.find(q => !answers[q.answerKey]) || null;
+}
 
-let _stubQIdx = 0;
+function renderQuestion(q) {
+    const bank  = QUESTION_BANKS[session.destination] || QUESTION_BANKS.build;
+    const total = bank.length;
+    const idx   = bank.findIndex(bq => bq.id === q.id);
+    const pct   = idx >= 0 ? (idx / total) * 100 : 0;
 
-function showStubQuestion(idx) {
-    _stubQIdx = idx;
-    const q = STUB_QUESTIONS[idx] || STUB_QUESTIONS[STUB_QUESTIONS.length - 1];
-    document.getElementById('qHeader').classList.remove('hidden');
-    document.getElementById('qBody').classList.remove('hidden');
-    document.getElementById('qStep').textContent  = `Question ${idx + 1} of ${STUB_QUESTIONS.length}`;
+    document.getElementById('qProgressFill').style.width = pct + '%';
+    document.getElementById('qStep').textContent  = idx >= 0
+        ? `Question ${idx + 1} of ${total}` : 'Additional question';
     document.getElementById('qText').textContent  = q.text;
     document.getElementById('qWhy').textContent   = q.why;
     document.getElementById('answerTa').value     = '';
     document.getElementById('chipsList').innerHTML = q.chips.map(c =>
         `<button class="chip" onclick="selectChip(this)"><span class="chip-dot"></span>${esc(c)}</button>`
     ).join('');
+
+    document.getElementById('destWrap').classList.add('hidden');
+    document.getElementById('qHeader').classList.remove('hidden');
+    document.getElementById('qBody').classList.remove('hidden');
 }
 
 function selectChip(el) {
     document.querySelectorAll('#chipsList .chip').forEach(c => c.classList.remove('selected'));
     el.classList.add('selected');
-    const label = el.textContent.trim();
-    document.getElementById('answerTa').value = label;
+    document.getElementById('answerTa').value = el.textContent.trim();
 }
 
 function handleAnswer() {
     const val = document.getElementById('answerTa').value.trim();
     if (!val) return;
 
-    const q = STUB_QUESTIONS[_stubQIdx];
+    const q = getNextBestQuestion();
+
+    // Editing existing node
+    if (session.editingNodeId) {
+        const node = nodes.find(n => n.id === session.editingNodeId);
+        if (node) {
+            node.label = val;
+            if (q) answers[q.answerKey] = val;
+        }
+        session.editingNodeId = null;
+        document.querySelectorAll('.node-editing').forEach(el => el.classList.remove('node-editing'));
+        renderMindMap();
+        const next = getNextBestQuestion();
+        if (next) renderQuestion(next); else showPromptReady();
+        return;
+    }
+
+    // Store answer
     if (q) answers[q.answerKey] = val;
-
     session.answeredCount++;
-    session.questionIndex++;
 
-    // Determine parent for this answer node:
-    // attach to destination node (nodes[1]) if it exists, else central
-    const parentNode = nodes[1] || nodes[0];
+    // Determine parent
+    let parentNode;
+    if (session.branchFromNodeId) {
+        parentNode = nodes.find(n => n.id === session.branchFromNodeId) || getParentNode(q ? q.parentStrategy : 'destination');
+        session.branchFromNodeId = null;
+    } else {
+        parentNode = getParentNode(q ? q.parentStrategy : 'destination');
+    }
+
     const sibs = nodes.filter(n => n.parentId === parentNode.id);
     createNode({
-        type: 'answer', category: q ? q.category : 'Answer', label: val,
-        parentId: parentNode.id,
-        siblingIndex: sibs.length, totalSiblings: sibs.length + 1
+        type:'answer', category: q ? q.category : 'Answer', label:val,
+        parentId: parentNode.id, siblingIndex: sibs.length, totalSiblings: sibs.length + 1,
+        answerKey: q ? q.answerKey : null, questionId: q ? q.id : null, isNew: true
     });
+    repositionSiblings(parentNode.id);
     renderMindMap();
 
-    // Arc
-    const newScore = Math.min(5, Math.floor(session.answeredCount / 1.2) + 2);
-    arc.clarified = [...arc.clarified, `${q ? q.category : 'Answer'}: ${trunc(val, 30)}`];
-    arc.missing   = getMissingIngredients();
-    arc.stage     = Math.min(9, 2 + session.answeredCount);
-    arc.direction = buildArcDirection();
-    arc.nextMove  = _stubQIdx + 1 < STUB_QUESTIONS.length
-        ? `Next: ${STUB_QUESTIONS[_stubQIdx + 1].text}`
-        : 'You have enough to generate an excellent Claude prompt.';
-    updateArc();
-    renderArcStages(arc.stage, arc.stage - 1);
-    setQuality(newScore);
-
-    // Next question or prompt-ready
-    if (_stubQIdx + 1 < STUB_QUESTIONS.length) {
-        showStubQuestion(_stubQIdx + 1);
-    } else {
-        showPromptReady();
+    // Arc + quality
+    if (q && val) {
+        const entry = `${q.category}: ${trunc(val, 30)}`;
+        if (!arc.clarified.includes(entry)) arc.clarified.push(entry);
     }
+    const answeredN = Object.entries(answers)
+        .filter(([k, v]) => k !== 'calibrations' && v !== null).length;
+    arc.stage     = Math.min(9, 2 + answeredN);
+    arc.missing   = getMissingIngredients();
+    arc.direction = generateArcDirection();
+    arc.nextMove  = generateArcNextMove();
+    updateArc(); renderArcStages(arc.stage, arc.stage - 1);
+    setQuality(computeQualityScore());
+    updateArcMini();
+
+    // Next question
+    const next = getNextBestQuestion();
+    if (next) renderQuestion(next); else showPromptReady();
 }
 
 function notSure() {
     const first = document.querySelector('#chipsList .chip');
-    if (first) { first.click(); }
+    if (first) first.click();
 }
 
 function skipQuestion() {
-    session.questionIndex++;
-    if (_stubQIdx + 1 < STUB_QUESTIONS.length) showStubQuestion(_stubQIdx + 1);
-    else showPromptReady();
+    const q = getNextBestQuestion();
+    if (!q) { showPromptReady(); return; }
+    // Mark as skipped with empty string so it's considered answered
+    answers[q.answerKey] = '(skipped)';
+    session.answeredCount++;
+    const next = getNextBestQuestion();
+    if (next) renderQuestion(next); else showPromptReady();
 }
 
 function showPromptReady() {
     document.getElementById('qStep').textContent = 'Prompt ready';
+    document.getElementById('qProgressFill').style.width = '100%';
     document.getElementById('qText').textContent = 'You have answered enough questions. Generate your Claude prompt now, or keep refining.';
     document.getElementById('qWhy').textContent  = '';
     document.getElementById('chipsList').innerHTML = '';
-    arc.stage = 9; arc.nextMove = 'Click Generate prompt to create your expert-level Claude prompt.';
-    updateArc(); renderArcStages(9, 8); setQuality(5);
+    document.getElementById('answerTa').value = '';
+    arc.stage = 9; arc.nextMove = 'Click Generate prompt — all key ingredients are in place.';
+    updateArc(); renderArcStages(9, 8); setQuality(5); updateArcMini();
 }
 
-function improvePrompt() {
-    closePromptDrawer();
-}
+function improvePrompt() { closePromptDrawer(); }
 
-function buildArcDirection() {
-    const dest  = answers.destination || session.destination || 'prompt';
-    const aud   = answers.audience    ? ` for ${trunc(answers.audience, 30)}` : '';
-    const fmt   = answers.format      ? `. Output: ${trunc(answers.format, 25)}` : '';
-    return `Building a "${dest}" prompt${aud}${fmt}.`;
+
+/* ============================================================
+   PARENT NODE SELECTION
+   ============================================================ */
+function getParentNode(strategy) {
+    const byKey  = k => nodes.find(n => n.answerKey === k);
+    const destNd = nodes.find(n => n.type === 'dest') || nodes[0];
+    switch (strategy) {
+        case 'destination': return destNd;
+        case 'audience':    return byKey('audience')    || destNd;
+        case 'outcome':     return byKey('outcome')     || byKey('audience') || destNd;
+        case 'format':      return byKey('format')      || destNd;
+        case 'tone':        return byKey('tone')        || destNd;
+        case 'context':     return byKey('context')     || destNd;
+        case 'goal':        return byKey('outcome')     || destNd;
+        case 'what':        return destNd;
+        case 'feel':        return byKey('tone')        || destNd;
+        case 'subject':     return destNd;
+        case 'topic':       return destNd;
+        case 'decision':    return byKey('outcome')     || destNd;
+        case 'bluntness':   return byKey('outcome')     || destNd;
+        case 'question':    return byKey('context')     || destNd;
+        default:            return destNd;
+    }
 }
 
 
 /* ============================================================
-   MISSING INGREDIENTS
+   NODE CREATION + LAYOUT
    ============================================================ */
-function getMissingIngredients() {
-    return INGREDIENTS.filter(label => {
-        const key = label.toLowerCase().replace(/\s/g, '');
-        return !answers[key];
-    });
-}
-
-
-/* ============================================================
-   NODE CREATION
-   ============================================================ */
-function createNode({ type, category, label, parentId, siblingIndex = 0, totalSiblings = 1, x, y }) {
+function createNode({ type, category, label, parentId, siblingIndex=0, totalSiblings=1, x, y, answerKey=null, questionId=null, isNew=false }) {
     const id  = nextId();
-    const pos = (x !== undefined && y !== undefined)
-        ? { x, y }
-        : calcNodePos(parentId, siblingIndex, totalSiblings);
-    const node = { id, type, category, label, parentId, x: pos.x, y: pos.y };
+    const pos = (x !== undefined && y !== undefined) ? {x, y} : calcNodePos(parentId, siblingIndex, totalSiblings);
+    const node = { id, type, category, label, parentId, x:pos.x, y:pos.y, answerKey, questionId, isNew };
     nodes.push(node);
     return node;
 }
 
-
-/* ============================================================
-   NODE POSITION — offsets from canvas centre (px)
-   ============================================================ */
 function calcNodePos(parentId, siblingIndex, totalSiblings) {
-    if (!parentId) return { x: 0, y: 0 };
-
+    if (!parentId) return { x:0, y:0 };
     const parent = nodes.find(n => n.id === parentId);
-    if (!parent) return { x: 200, y: 0 };
+    if (!parent) return { x:200, y:0 };
 
-    const DIST = 210;
+    const DIST = 200;
 
-    // First-level branches: radiate around centre
     if (!parent.parentId) {
-        const slots     = Math.max(totalSiblings, 6);
-        const angleStep = (2 * Math.PI) / slots;
-        const angle     = -Math.PI / 2 + siblingIndex * angleStep; // start top
-        return {
-            x: parent.x + Math.cos(angle) * DIST,
-            y: parent.y + Math.sin(angle) * DIST
-        };
+        // First level: distribute evenly in a circle, start from upper-right
+        const slots = Math.max(totalSiblings, 1);
+        const step  = (2 * Math.PI) / Math.max(slots, 5);
+        const angle = -Math.PI / 3 + siblingIndex * step;
+        return { x: parent.x + Math.cos(angle) * DIST, y: parent.y + Math.sin(angle) * DIST };
     }
 
-    // Deeper levels: continue direction from grandparent → parent
-    const gp        = nodes.find(n => n.id === parent.parentId);
-    const base      = gp ? Math.atan2(parent.y - gp.y, parent.x - gp.x) : 0;
-    const spread    = Math.PI / 2.5;
-    const offset    = totalSiblings > 1
-        ? (siblingIndex / (totalSiblings - 1) - 0.5) * spread
-        : 0;
+    // Deeper: continue direction from grandparent → parent, fan siblings
+    const gp   = nodes.find(n => n.id === parent.parentId);
+    const base = gp ? Math.atan2(parent.y - gp.y, parent.x - gp.x) : 0;
+    const spread = Math.PI / 2.5;
+    const offset = totalSiblings > 1 ? (siblingIndex / (totalSiblings - 1) - 0.5) * spread : 0;
     return {
-        x: parent.x + Math.cos(base + offset) * DIST,
-        y: parent.y + Math.sin(base + offset) * DIST
+        x: parent.x + Math.cos(base + offset) * (DIST * 0.85),
+        y: parent.y + Math.sin(base + offset) * (DIST * 0.85)
     };
+}
+
+function repositionSiblings(parentId) {
+    const sibs = nodes.filter(n => n.parentId === parentId);
+    sibs.forEach((n, i) => {
+        const pos = calcNodePos(parentId, i, sibs.length);
+        n.x = pos.x; n.y = pos.y;
+    });
 }
 
 
@@ -1809,19 +1999,17 @@ function renderMindMap() {
     container.innerHTML = '';
     svg.innerHTML       = '';
 
-    // Lines behind nodes
+    // Lines
     nodes.forEach(node => {
         if (!node.parentId) return;
         const par = nodes.find(n => n.id === node.parentId);
         if (!par) return;
-
         const x1 = cx + par.x,  y1 = cy + par.y;
         const x2 = cx + node.x, y2 = cy + node.y;
         const mx = (x1 + x2) / 2;
-
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);
-        const cls = ['map-line', 'solid'];
+        const cls = ['map-line','solid'];
         if (node.type === 'dest')  cls.push('dest');
         if (node.type === 'calib') cls.push('calib');
         path.setAttribute('class', cls.join(' '));
@@ -1830,34 +2018,29 @@ function renderMindMap() {
 
     // Nodes
     nodes.forEach(node => {
-        const ax = cx + node.x;
-        const ay = cy + node.y;
-
+        const ax = cx + node.x, ay = cy + node.y;
         const el = document.createElement('div');
-        el.className   = `node node-${node.type === 'central' ? 'central' : node.type === 'dest' ? 'dest' : node.type === 'calib' ? 'calib' : 'answer'} node-new`;
+        el.className = `node node-${node.type === 'central' ? 'central' : node.type === 'dest' ? 'dest' : node.type === 'calib' ? 'calib' : 'answer'}${node.isNew ? ' node-new' : ''}`;
         el.dataset.nid = node.id;
         el.style.left  = ax + 'px';
         el.style.top   = ay + 'px';
-        el.onclick = (e) => { e.stopPropagation(); onNodeClick(ax, ay, node); };
+        el.onclick = e => { e.stopPropagation(); onNodeClick(ax, ay, node); };
 
         if (node.type === 'central') {
             el.innerHTML = `<div class="node-inner"><div class="n-sub">Your idea</div><div class="n-label">${esc(trunc(node.label, 65))}</div></div>`;
         } else {
             el.innerHTML = `<div class="node-inner"><div class="n-cat">${esc(node.category)}</div><div class="n-label">${esc(trunc(node.label, 42))}</div></div>`;
         }
-
         container.appendChild(el);
+        node.isNew = false; // only animate once
     });
 }
 
-// Re-render on resize
 let _rzTimer;
 window.addEventListener('resize', () => {
     clearTimeout(_rzTimer);
     _rzTimer = setTimeout(() => { if (nodes.length) renderMindMap(); }, 120);
 });
-
-// Click on canvas background dismisses tooltip
 document.getElementById('canvasWrap').addEventListener('click', () => hideNodeTooltip());
 
 
@@ -1866,17 +2049,14 @@ document.getElementById('canvasWrap').addEventListener('click', () => hideNodeTo
    ============================================================ */
 function onNodeClick(ax, ay, node) {
     tooltipNodeId = node.id;
-    const tt  = document.getElementById('nodeTooltip');
     document.getElementById('ttCat').textContent = node.category;
     document.getElementById('ttVal').textContent = node.label;
-
-    // Smart positioning
-    const ttW = 224, ttH = 150;
-    const vw  = window.innerWidth, vh = window.innerHeight;
-    let left  = ax + 16, top = ay - 20;
+    const tt = document.getElementById('nodeTooltip');
+    const ttW = 224, ttH = 155;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let left = ax + 16, top = ay - 20;
     if (left + ttW > vw - 16) left = ax - ttW - 16;
     if (top  + ttH > vh - 80) top  = ay - ttH;
-
     tt.style.left = left + 'px';
     tt.style.top  = top  + 'px';
     tt.classList.add('visible');
@@ -1887,8 +2067,31 @@ function hideNodeTooltip() {
     tooltipNodeId = null;
 }
 
-function editNodeTt()       { hideNodeTooltip(); /* Chunk 3 */ }
-function branchNodeTt()     { hideNodeTooltip(); /* Chunk 5 */ }
+function editNodeTt() {
+    const node = nodes.find(n => n.id === tooltipNodeId);
+    hideNodeTooltip();
+    if (!node || !node.answerKey) return;
+    const bank = QUESTION_BANKS[session.destination] || [];
+    const q    = bank.find(bq => bq.answerKey === node.answerKey);
+    if (!q) return;
+    session.editingNodeId = node.id;
+    document.querySelectorAll('.node').forEach(el => el.classList.remove('node-editing'));
+    const el = document.querySelector(`[data-nid="${node.id}"]`);
+    if (el) el.classList.add('node-editing');
+    renderQuestion(q);
+    document.getElementById('answerTa').value = node.label;
+    document.getElementById('qText').textContent = 'Editing: ' + q.text;
+}
+
+function branchNodeTt() {
+    const node = nodes.find(n => n.id === tooltipNodeId);
+    hideNodeTooltip();
+    if (!node) return;
+    session.branchFromNodeId = node.id;
+    const next = getNextBestQuestion();
+    if (next) renderQuestion(next); else showPromptReady();
+}
+
 function generateFromNode() { hideNodeTooltip(); generateFinalPrompt(); }
 
 
@@ -1899,30 +2102,20 @@ function renderArcStages(currentIdx = -1, doneUpTo = -1) {
     const container = document.getElementById('arcStages');
     container.innerHTML = '';
     STAGE_NAMES.forEach((name, i) => {
-        const row   = document.createElement('div');
-        row.className = 'arc-stage-row';
-
-        const track = document.createElement('div');
-        track.className = 'arc-stage-track';
-
-        const dot = document.createElement('div');
-        dot.className = 'arc-dot'
-            + (i <= doneUpTo ? ' done' : i === currentIdx ? ' current' : '');
+        const row   = document.createElement('div'); row.className = 'arc-stage-row';
+        const track = document.createElement('div'); track.className = 'arc-stage-track';
+        const dot   = document.createElement('div');
+        dot.className = 'arc-dot' + (i <= doneUpTo ? ' done' : i === currentIdx ? ' current' : '');
         track.appendChild(dot);
-
         if (i < STAGE_NAMES.length - 1) {
             const conn = document.createElement('div');
             conn.className = 'arc-connector' + (i < doneUpTo ? ' done' : '');
             track.appendChild(conn);
         }
-
         const label = document.createElement('div');
-        label.className = 'arc-stage-text'
-            + (i <= doneUpTo ? ' done' : i === currentIdx ? ' current' : '');
+        label.className = 'arc-stage-text' + (i <= doneUpTo ? ' done' : i === currentIdx ? ' current' : '');
         label.textContent = name;
-
-        row.appendChild(track);
-        row.appendChild(label);
+        row.appendChild(track); row.appendChild(label);
         container.appendChild(row);
     });
 }
@@ -1930,19 +2123,61 @@ renderArcStages();
 
 
 /* ============================================================
-   ARC NARRATIVE UPDATE
+   ARC NARRATIVE  (Chunk 4)
    ============================================================ */
+function generateArcDirection() {
+    const dest = DESTINATIONS.find(d => d.id === session.destination);
+    const dl   = dest ? dest.label.toLowerCase() : 'prompt';
+    const parts = [];
+
+    if (answers.audience && answers.outcome) {
+        parts.push(`Building a ${dl} for ${trunc(answers.audience, 30)} — goal: ${trunc(answers.outcome, 45)}.`);
+    } else if (answers.audience) {
+        parts.push(`Shaping a ${dl} for ${trunc(answers.audience, 40)}.`);
+    } else {
+        parts.push(`Shaping a ${dl} prompt.`);
+    }
+    if (answers.format)  parts.push(`Output: ${trunc(answers.format, 35)}.`);
+    if (answers.tone)    parts.push(`Feel: ${trunc(answers.tone, 30)}.`);
+    if (answers.constraints) parts.push(`Avoiding: ${trunc(answers.constraints, 35)}.`);
+
+    return parts.join(' ');
+}
+
+function generateArcNextMove() {
+    const missing  = getMissingIngredients();
+    if (missing.length === 0) return 'All key ingredients are in place — generate your Claude prompt now.';
+    const priority = ['Outcome','Format','Audience','Tone','Constraints','Success criteria','Context'];
+    const next     = priority.find(p => missing.includes(p)) || missing[0];
+    const moves = {
+        'Audience':          'Who is this for? Knowing the audience prevents generic outputs.',
+        'Outcome':           'Define the core outcome — what success looks like for the user.',
+        'Format':            'Specify the output format — the most underused prompt ingredient.',
+        'Tone':              'Add tone and style guidance to shape how Claude writes everything.',
+        'Constraints':       'Add constraints to prevent the most common failure modes.',
+        'Success criteria':  'Define what excellent output looks like — this raises the bar significantly.',
+        'Context':           'Add context so Claude has the full picture before it starts.'
+    };
+    return moves[next] || `Clarify: ${missing[0].toLowerCase()}.`;
+}
+
+function getMissingIngredients() {
+    return INGREDIENTS.filter(label => {
+        const key = label.toLowerCase().replace(/\s/g, '');
+        const val = answers[key];
+        return !val || val === '(skipped)';
+    });
+}
+
 function updateArc() {
     const hasContent = !!arc.direction;
     document.getElementById('arcEmptyNote').classList.toggle('hidden', hasContent);
-
     setEl('arcSecDir',  !!arc.direction);
     setEl('arcSecClar', arc.clarified.length > 0);
-    setEl('arcSecMiss', arc.missing.length > 0);
+    setEl('arcSecMiss', arc.missing.length  > 0);
     setEl('arcSecNext', !!arc.nextMove);
-
-    if (arc.direction) document.getElementById('arcDir').textContent  = arc.direction;
-    if (arc.clarified.length) document.getElementById('arcClar').textContent = arc.clarified.join(' · ');
+    if (arc.direction)         document.getElementById('arcDir').textContent  = arc.direction;
+    if (arc.clarified.length)  document.getElementById('arcClar').textContent = arc.clarified.join(' · ');
     if (arc.missing.length) {
         document.getElementById('arcMissTags').innerHTML =
             arc.missing.map(m => `<span class="arc-tag missing">${esc(m)}</span>`).join('');
@@ -1954,10 +2189,27 @@ function setEl(id, show) {
     document.getElementById(id).classList.toggle('hidden', !show);
 }
 
+function updateArcMini() {
+    if (arc.direction) document.getElementById('arcMiniText').textContent = arc.direction;
+}
+
 
 /* ============================================================
-   QUALITY METER
+   QUALITY METER  (Chunk 4)
    ============================================================ */
+function computeQualityScore() {
+    let s = 0;
+    if (session.seedIdea && session.seedIdea.length > 8) s++;
+    if (answers.destination)    s++;
+    if (answers.audience)       s++;
+    if (answers.outcome)        s++;
+    if (answers.format)         s++;
+    if (answers.tone)           s++;
+    if (answers.constraints)    s++;
+    if (answers.successcriteria) s++;
+    return Math.min(5, Math.round((s / 8) * 5));
+}
+
 function setQuality(score) {
     qualityScore = Math.min(5, score);
     document.querySelectorAll('.quality-pip').forEach((p, i) => {
@@ -1972,62 +2224,57 @@ setQuality(0);
    FINAL PROMPT GENERATION
    ============================================================ */
 function generateFinalPrompt() {
-    const dest   = DESTINATIONS.find(d => d.id === session.destination) || DESTINATIONS[0];
-    const idea   = session.seedIdea || 'the described concept';
-    const aud    = answers.audience      || 'the intended audience';
-    const out    = answers.outcome       || 'a high-quality, immediately usable result';
-    const fmt    = answers.format        || 'structured, clearly labelled sections';
-    const tone   = answers.tone          || 'precise and professional';
-    const constr = answers.constraints   || 'avoid generic filler; be specific throughout';
-    const crit   = answers.successcriteria || 'feels like expert-level work; immediately actionable';
+    const dest = DESTINATIONS.find(d => d.id === session.destination) || DESTINATIONS[0];
+    const idea = session.seedIdea || 'the described concept';
+    const aud  = (answers.audience && answers.audience !== '(skipped)') ? answers.audience : 'the intended audience';
+    const out  = (answers.outcome  && answers.outcome  !== '(skipped)') ? answers.outcome  : 'a high-quality, immediately useful result';
+    const fmt  = (answers.format   && answers.format   !== '(skipped)') ? answers.format   : 'structured, clearly labelled sections';
+    const tone = (answers.tone     && answers.tone     !== '(skipped)') ? answers.tone     : 'precise and professional';
+    const con  = (answers.constraints && answers.constraints !== '(skipped)') ? answers.constraints : 'avoid generic, template-like output';
+    const crit = (answers.successcriteria && answers.successcriteria !== '(skipped)') ? answers.successcriteria : 'feels like expert-level work; immediately actionable';
+    const ctx  = (answers.context  && answers.context  !== '(skipped)') ? answers.context  : '';
 
-    const roleMap = {
+    const roles = {
         build:      'world-class product designer and full-stack engineer',
         analyse:    'rigorous strategic analyst and critical thinker',
         write:      'expert writer and content strategist',
         design:     'senior visual designer and creative director',
-        research:   'research analyst and expert synthesiser',
-        strategise: 'experienced strategist and business thinker'
+        research:   'thorough research analyst and expert synthesiser',
+        strategise: 'experienced strategist and commercial thinker'
+    };
+    const tasks = {
+        build:      `Build a complete, working prototype or full specification for: ${idea}.\n\nThe output should be self-contained, polished, and immediately usable — not a starting point for further work. Include all the detail Claude needs to produce something excellent.`,
+        analyse:    `Perform a rigorous, honest analysis of: ${idea}.\n\nBe direct, evidence-based, and commercially grounded. Do not produce a diplomatic non-answer — form a clear point of view and defend it.`,
+        write:      `Write high-quality, compelling content for: ${idea}.\n\nEvery sentence must earn its place. No filler, no hedging, no generic phrasing. Write as a real expert who cares about quality.`,
+        design:     `Produce a clear, opinionated design direction for: ${idea}.\n\nBe specific about visual language, layout principles, typography, colour palette, and spatial decisions. Do not be vague.`,
+        research:   `Research and synthesise the key findings on: ${idea}.\n\nPrioritise insight and relevance over comprehensiveness. Synthesise — do not merely compile. Highlight what is known, what is uncertain, and what matters most.`,
+        strategise: `Develop a clear, actionable strategy for: ${idea}.\n\nBe bold, specific, and commercially grounded. Do not produce a generic framework — produce a real recommendation you would stake your reputation on.`
     };
 
-    const taskMap = {
-        build:      `Build a complete, working prototype for: ${idea}. The output should be self-contained, visually polished, and immediately usable.`,
-        analyse:    `Perform a rigorous, honest analysis of: ${idea}. Be direct, evidence-based, and commercially grounded.`,
-        write:      `Write compelling, high-quality content for: ${idea}. Every sentence must earn its place — no filler.`,
-        design:     `Produce a clear, opinionated design direction for: ${idea}. Include specific visual language, layout principles, and decisions.`,
-        research:   `Research and synthesise the key findings on: ${idea}. Prioritise insight and relevance over comprehensiveness.`,
-        strategise: `Develop a clear, actionable strategy for: ${idea}. Be bold, specific, and commercially grounded.`
-    };
+    const ctxBlock = [
+        `This is for: ${aud}.`,
+        `The core goal is: ${out}.`,
+        ctx ? `Additional context: ${ctx}.` : ''
+    ].filter(Boolean).join('\n');
 
-    const prompt = `ROLE
-You are a ${roleMap[dest.id] || roleMap.build}.
+    const calibBlock = answers.calibrations.length
+        ? '\n\nCALIBRATION NOTES\n' + answers.calibrations.map(c => `— ${c.text}`).join('\n')
+        : '';
 
-CONTEXT
-The brief is to ${dest.label.toLowerCase()}: ${idea}.
-This is for: ${aud}.
-
-TASK
-${taskMap[dest.id] || taskMap.build}
-
-OUTPUT FORMAT
-${fmt}
-
-TONE & STYLE
-${tone}
-
-CONSTRAINTS
-${constr}
-
-SUCCESS CRITERIA
-${crit}
-
-FINAL INSTRUCTION
-Do not produce generic, templated output. Everything you write should feel like it was created specifically for this brief by a genuine expert. Be concrete, be specific, and be immediately useful.`;
+    const prompt = [
+        `ROLE\nYou are a ${roles[dest.id] || roles.build}.`,
+        `CONTEXT\n${ctxBlock}`,
+        `TASK\n${tasks[dest.id] || tasks.build}`,
+        `OUTPUT FORMAT\n${fmt}`,
+        `TONE & STYLE\n${tone}`,
+        `CONSTRAINTS\n${con}${calibBlock}`,
+        `SUCCESS CRITERIA\n${crit}`,
+        `FINAL INSTRUCTION\nDo not produce generic, templated output. Everything you produce should feel like it was created specifically for this brief by a genuine expert. Be concrete, be specific, and be immediately useful. If anything in this brief is ambiguous, make an intelligent assumption and state it — do not ask clarifying questions.`
+    ].join('\n\n');
 
     document.getElementById('promptOutput').textContent = prompt;
     document.getElementById('drawerSub').textContent =
-        `${session.answeredCount + 1} inputs used · ${dest.label} · ${QUALITY_LABELS[qualityScore]}`;
-
+        `${session.answeredCount + 1} inputs · ${dest.label} · ${QUALITY_LABELS[qualityScore]}`;
     document.getElementById('promptDrawer').classList.add('open');
     showOverlay();
 }
@@ -2046,21 +2293,22 @@ async function copyPrompt() {
         setTimeout(() => {
             btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 8V2C2 1.44772 2.44772 1 3 1H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Copy prompt`;
         }, 2200);
-    } catch (e) { console.warn('Copy failed', e); }
+    } catch(e) { console.warn('Copy failed', e); }
 }
 
 
 /* ============================================================
-   CALIBRATION
+   CALIBRATION ACTIONS  (Chunk 5 will deepen these)
    ============================================================ */
 let _calibType = 'steer';
 
 function openCalibModal(type) {
+    if (!session.started) return;
     _calibType = type;
     const title = document.getElementById('calibModalTitle');
     const ta    = document.getElementById('calibModalTa');
     title.textContent = type === 'steer' ? 'Steer the direction' : 'Add your own direction';
-    ta.placeholder = type === 'steer'
+    ta.placeholder    = type === 'steer'
         ? 'e.g. This is too functional — I want it more emotionally compelling and brand-led.'
         : 'e.g. Focus on the onboarding experience before anything else.';
     ta.value = '';
@@ -2080,20 +2328,84 @@ function applyCustomCalib() {
     answers.calibrations.push({ type: _calibType, text });
     session.calibrationCount++;
     closeCalibModal();
-    // Chunk 5 adds calibration node + next question shift
-    console.log('Calibration queued for Chunk 5:', _calibType, text);
+
+    // Create calibration node attached to most recent non-central node
+    const parentNode = [...nodes].reverse().find(n => n.type !== 'central') || nodes[0];
+    const sibs = nodes.filter(n => n.parentId === parentNode.id);
+    createNode({
+        type:'calib', category:'Calibration', label: trunc(text, 40),
+        parentId: parentNode.id, siblingIndex: sibs.length, totalSiblings: sibs.length + 1, isNew: true
+    });
+    repositionSiblings(parentNode.id);
+    renderMindMap();
+
+    // Steer: show a follow-up direction question
+    if (_calibType === 'steer') {
+        renderQuestion({
+            id: 'steer_follow', isExtra: true,
+            text: 'Given this new direction — what matters most now?',
+            why: `Calibration applied: "${trunc(text, 60)}"`,
+            chips: ['The emotional quality it should have','The specific output format needed','Who this is really for','What success now looks like','The constraint that matters most'],
+            category:'Steered', answerKey:'context', parentStrategy:'destination'
+        });
+    } else {
+        const next = getNextBestQuestion();
+        if (next) renderQuestion(next); else showPromptReady();
+    }
+
+    arc.clarified.push('Calibration: ' + trunc(text, 35));
+    arc.direction = generateArcDirection() + ` [Calibrated]`;
+    updateArc(); updateArcMini();
 }
 
 function applyAction(type) {
-    // Chunk 5
     if (!session.started) return;
-    console.log('Action:', type);
+    const bank = QUESTION_BANKS[session.destination] || QUESTION_BANKS.build;
+    switch (type) {
+        case 'deeper': {
+            const next = getNextBestQuestion();
+            if (next) renderQuestion(next); else showPromptReady();
+            break;
+        }
+        case 'zoom': {
+            renderQuestion({ id:'zoom', text:'Step back — what is the real goal here?',
+                why:'Zooming out prevents over-engineering and keeps the prompt aligned with the actual objective.',
+                chips:['The core problem to solve','The outcome that matters most','What success looks like later','The simplest version that works','What is NOT needed here'],
+                category:'Recalibration', answerKey:'outcome', parentStrategy:'destination' });
+            break;
+        }
+        case 'challenge': {
+            renderQuestion({ id:'challenge', text:'What assumptions might we be making that could be wrong?',
+                why:'Challenging assumptions prevents Claude from optimising for the wrong problem.',
+                chips:['The audience actually wants this','This format is the right one','The defined outcome is achievable','The constraints are the real ones','This is the right destination type'],
+                category:'Recalibration', answerKey:'context', parentStrategy:'destination' });
+            break;
+        }
+        case 'missing': {
+            const miss = getMissingIngredients();
+            const q    = bank.find(bq => miss.includes(bq.category));
+            if (q) renderQuestion(q); else showPromptReady();
+            break;
+        }
+        case 'sharper': {
+            renderQuestion({ id:'sharper', text:'If the prompt produced mediocre output, what would be missing?',
+                why:'Sharpening means closing the gap between acceptable and excellent.',
+                chips:['More specific context about the situation','Clearer constraints on what to avoid','A higher success bar','More precise audience definition','A concrete example or reference'],
+                category:'Sharpening', answerKey:'successcriteria', parentStrategy:'destination' });
+            break;
+        }
+        case 'branch': {
+            const recent = [...nodes].reverse().find(n => n.type === 'answer');
+            if (recent) { session.branchFromNodeId = recent.id; }
+            const next = getNextBestQuestion();
+            if (next) renderQuestion(next); else showPromptReady();
+            break;
+        }
+    }
 }
 
 function openChangeDestination() {
     if (!session.started) return;
-    document.getElementById('qHeader').classList.add('hidden');
-    document.getElementById('qBody').classList.add('hidden');
     showDestinationSelect(session.destination || 'build');
 }
 
@@ -2105,7 +2417,16 @@ let arcCollapsed = false;
 function toggleArcPanel() {
     arcCollapsed = !arcCollapsed;
     document.getElementById('arcPanel').classList.toggle('collapsed', arcCollapsed);
+    document.getElementById('arcMini').classList.toggle('visible', arcCollapsed);
 }
+
+
+/* ============================================================
+   OVERLAY + CLOSE ALL
+   ============================================================ */
+function showOverlay() { document.getElementById('overlay').classList.add('on'); }
+function hideOverlay()  { document.getElementById('overlay').classList.remove('on'); }
+function closeAll() { closeCalibModal(); closePromptDrawer(); hideNodeTooltip(); }
 
 
 /* ============================================================
@@ -2118,25 +2439,11 @@ function useExample(el) {
 
 
 /* ============================================================
-   OVERLAY
-   ============================================================ */
-function showOverlay() { document.getElementById('overlay').classList.add('on'); }
-function hideOverlay()  { document.getElementById('overlay').classList.remove('on'); }
-
-function closeAll() {
-    closeCalibModal();
-    closePromptDrawer();
-    hideNodeTooltip();
-}
-
-
-/* ============================================================
    UTILITIES
    ============================================================ */
 function trunc(str, len) {
     return str && str.length > len ? str.slice(0, len).trimEnd() + '…' : (str || '');
 }
-
 function esc(str) {
     return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
