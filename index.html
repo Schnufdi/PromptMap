@@ -977,13 +977,9 @@ async function addBranch(idx) {
         ? parent.colorIdx
         : sibs.length % BRANCH_COLORS.length;
 
-    const newNode = createNode({
-        type: 'answer', label: branch.label, colorIdx,
-        parentId, siblingIndex: sibs.length, totalSiblings: sibs.length + 1, isNew: true
-    });
+    const newNode = createNode({ type: 'answer', label: branch.label, colorIdx, parentId, isNew: true });
 
-    repositionSiblings(parentId);
-    resolveCollisions();
+    layoutTree();
     fitToCanvas();
     updateMapOverview();
     showExplorePanel(newNode.id);
@@ -1000,14 +996,10 @@ function addCustomBranch() {
         ? parent.colorIdx
         : sibs.length % BRANCH_COLORS.length;
 
-    const newNode = createNode({
-        type: 'answer', label: val, colorIdx,
-        parentId, siblingIndex: sibs.length, totalSiblings: sibs.length + 1, isNew: true
-    });
+    const newNode = createNode({ type: 'answer', label: val, colorIdx, parentId, isNew: true });
 
     document.getElementById('customBranchTa').value = '';
-    repositionSiblings(parentId);
-    resolveCollisions();
+    layoutTree();
     fitToCanvas();
     updateMapOverview();
     showExplorePanel(newNode.id);
@@ -1171,9 +1163,9 @@ function onNodeRightClick(e, ax, ay, node) {
     const tt  = document.getElementById('nodeTooltip');
     const ttW = 220, ttH = 110;
     const vw  = window.innerWidth, vh = window.innerHeight;
-    let left  = ax + 12, top = ay - 18;
-    if (left + ttW > vw - 12) left = ax - ttW - 12;
-    if (top  + ttH > vh - 80) top  = ay  - ttH;
+    let left  = e.clientX + 12, top = e.clientY - 18;
+    if (left + ttW > vw - 12) left = e.clientX - ttW - 12;
+    if (top  + ttH > vh - 80) top  = e.clientY  - ttH;
     tt.style.left = left + 'px'; tt.style.top = top + 'px';
     tt.classList.add('visible');
 }
@@ -1198,9 +1190,8 @@ function removeFromTt() {
     function mark(nid) { toRemove.add(nid); nodes.filter(n => n.parentId === nid).forEach(c => mark(c.id)); }
     mark(id);
     nodes = nodes.filter(n => !toRemove.has(n.id));
-    if (parentId) repositionSiblings(parentId);
-    resolveCollisions();
-    renderMindMap();
+    layoutTree();
+    fitToCanvas();
     updateMapOverview();
     if (toRemove.has(session.selectedNodeId)) {
         const parent = nodes.find(n => n.id === parentId);
@@ -1212,74 +1203,42 @@ function removeFromTt() {
 /* ============================================================
    NODE CREATION + LAYOUT
    ============================================================ */
-function createNode({ type, label, colorIdx = -1, parentId = null, siblingIndex = 0, totalSiblings = 1, x, y, isNew = false }) {
-    const id  = nextId();
-    const pos = (x !== undefined && y !== undefined) ? { x, y } : calcNodePos(parentId, siblingIndex, totalSiblings);
-    const node = { id, type, label, colorIdx, parentId, x: pos.x, y: pos.y, isNew, branches: null };
+function createNode({ type, label, colorIdx = -1, parentId = null, isNew = false }) {
+    const id   = nextId();
+    const node = { id, type, label, colorIdx, parentId, x: 0, y: 0, isNew, branches: null };
     nodes.push(node);
     return node;
 }
 
-function getDepth(nodeId) {
-    let d = 0, cur = nodes.find(n => n.id === nodeId);
-    while (cur && cur.parentId) { d++; cur = nodes.find(n => n.id === cur.parentId); }
-    return d;
-}
+// Left-to-right tree layout: root at left, children spread rightward and stacked top-to-bottom
+const X_STEP = 255;
+const Y_UNIT = 78;
 
-function calcNodePos(parentId, siblingIndex, totalSiblings) {
-    if (!parentId) return { x: 0, y: 0 };
-    const parent = nodes.find(n => n.id === parentId);
-    if (!parent) return { x: 240, y: 0 };
+function layoutTree() {
+    const root = nodes.find(n => n.type === 'central');
+    if (!root) return;
 
-    const depth = getDepth(parentId);
-    const DIST  = depth === 0 ? 245 : depth === 1 ? 195 : 165;
-
-    if (depth === 0) {
-        const slots = Math.max(totalSiblings, 5);
-        const step  = (2 * Math.PI) / slots;
-        const angle = -Math.PI / 2.2 + siblingIndex * step;
-        return { x: Math.cos(angle) * DIST, y: Math.sin(angle) * DIST };
+    function subtreeSize(id) {
+        const kids = nodes.filter(n => n.parentId === id);
+        return kids.length ? kids.reduce((s, k) => s + subtreeSize(k.id), 0) : 1;
     }
 
-    const gp     = nodes.find(n => n.id === parent.parentId);
-    const base   = gp ? Math.atan2(parent.y - gp.y, parent.x - gp.x) : 0;
-    const spread = totalSiblings <= 2 ? Math.PI / 3.5 :
-                   totalSiblings <= 4 ? Math.PI / 2.5 : Math.PI / 2.1;
-    const offset = totalSiblings > 1 ? (siblingIndex / (totalSiblings - 1) - 0.5) * spread : 0;
-    return {
-        x: parent.x + Math.cos(base + offset) * DIST,
-        y: parent.y + Math.sin(base + offset) * DIST
-    };
-}
-
-function repositionSiblings(parentId) {
-    const sibs = nodes.filter(n => n.parentId === parentId);
-    sibs.forEach((n, i) => {
-        const pos = calcNodePos(parentId, i, sibs.length);
-        n.x = pos.x; n.y = pos.y;
-    });
-}
-
-function resolveCollisions() {
-    const MIN = 108;
-    for (let iter = 0; iter < 8; iter++) {
-        let moved = false;
-        for (let i = 0; i < nodes.length; i++) {
-            for (let j = i + 1; j < nodes.length; j++) {
-                const a = nodes[i], b = nodes[j];
-                const dx = b.x - a.x, dy = b.y - a.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < MIN && dist > 0.5) {
-                    const push = (MIN - dist) / 2 + 2;
-                    const nx = dx / dist, ny = dy / dist;
-                    if (a.type !== 'central') { a.x -= nx * push; a.y -= ny * push; }
-                    if (b.type !== 'central') { b.x += nx * push; b.y += ny * push; }
-                    moved = true;
-                }
-            }
-        }
-        if (!moved) break;
+    function place(id, depth, topY, span) {
+        const node = nodes.find(n => n.id === id);
+        if (!node) return;
+        node.x = depth * X_STEP;
+        node.y = topY + span / 2;
+        const kids = nodes.filter(n => n.parentId === id);
+        let cursor = topY;
+        kids.forEach(k => {
+            const kSpan = subtreeSize(k.id) * Y_UNIT;
+            place(k.id, depth + 1, cursor, kSpan);
+            cursor += kSpan;
+        });
     }
+
+    const totalSpan = subtreeSize(root.id) * Y_UNIT;
+    place(root.id, 0, -totalSpan / 2, totalSpan);
 }
 
 /* ============================================================
