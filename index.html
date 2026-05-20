@@ -239,39 +239,19 @@ textarea, input { font-family: var(--font-body); }
 
 .node-active .node-inner { box-shadow: 0 0 0 3px var(--blue-grey-light), var(--shadow-md) !important; border-color: var(--blue-grey) !important; }
 
-/* Dimension-coloured nodes */
-.node-dim-problem .node-inner      { background: var(--burgundy-light); border-color: var(--burgundy-mid); }
-.node-dim-problem .n-cat           { color: var(--burgundy); }
-.node-dim-problem .n-label         { color: var(--burgundy); }
-.node-dim-user .node-inner         { background: var(--blue-grey-light); border-color: var(--blue-grey); }
-.node-dim-user .n-cat              { color: var(--blue-grey); }
-.node-dim-user .n-label            { color: #3d6375; }
-.node-dim-bizmodel .node-inner     { background: var(--amber-light); border-color: var(--amber-mid); }
-.node-dim-bizmodel .n-cat          { color: var(--amber); }
-.node-dim-bizmodel .n-label        { color: #7a4e1a; }
-.node-dim-distribution .node-inner { background: var(--sage-light); border-color: var(--sage-mid); }
-.node-dim-distribution .n-cat      { color: var(--sage); }
-.node-dim-distribution .n-label    { color: var(--sage); }
-.node-dim-moat .node-inner         { background: #f0edf8; border-color: #c9bfe8; }
-.node-dim-moat .n-cat              { color: #6b5a9e; }
-.node-dim-moat .n-label            { color: #4a3d7a; }
-.node-dim-risk .node-inner         { background: #fdf0ee; border-color: #f0c4bc; }
-.node-dim-risk .n-cat              { color: #c05a48; }
-.node-dim-risk .n-label            { color: #a0402f; }
-.node-dim-unexpected .node-inner   { background: #eef4f0; border-color: #b8d4be; }
-.node-dim-unexpected .n-cat        { color: var(--sage); }
-.node-dim-unexpected .n-label      { color: var(--sage); }
+/* Decision list items */
+.decision-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 0; cursor: pointer; border-bottom: 1px solid var(--border-xs);
+}
+.decision-item:last-child { border-bottom: none; }
+.decision-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.decision-label { font-size: 12px; color: var(--text-secondary); transition: color var(--ease-fast); }
+.decision-item:hover .decision-label { color: var(--text-primary); }
 
 /* Lines */
 .map-line { fill: none; stroke: var(--border-md); stroke-width: 1.5; stroke-dasharray: 5 4; stroke-linecap: round; }
 .map-line.solid { stroke-dasharray: none; }
-.map-line.dim-problem      { stroke: var(--burgundy-mid); }
-.map-line.dim-user         { stroke: var(--blue-grey); opacity: 0.5; }
-.map-line.dim-bizmodel     { stroke: var(--amber-mid); }
-.map-line.dim-distribution { stroke: var(--sage-mid); }
-.map-line.dim-moat         { stroke: #c9bfe8; }
-.map-line.dim-risk         { stroke: #f0c4bc; }
-.map-line.dim-unexpected   { stroke: var(--sage-mid); opacity: 0.6; }
 
 @keyframes nodeIn {
     from { opacity:0; transform:translate(-50%,-50%) scale(0.72); }
@@ -350,13 +330,7 @@ textarea, input { font-family: var(--font-body); }
     font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
     background: var(--bg-surface); color: var(--text-muted); margin-bottom: 6px;
 }
-.explore-dim-badge[data-dim="problem"]      { background: var(--burgundy-light); color: var(--burgundy); }
-.explore-dim-badge[data-dim="user"]         { background: var(--blue-grey-light); color: var(--blue-grey); }
-.explore-dim-badge[data-dim="bizmodel"]     { background: var(--amber-light); color: var(--amber); }
-.explore-dim-badge[data-dim="distribution"] { background: var(--sage-light); color: var(--sage); }
-.explore-dim-badge[data-dim="moat"]         { background: #f0edf8; color: #6b5a9e; }
-.explore-dim-badge[data-dim="risk"]         { background: #fdf0ee; color: #c05a48; }
-.explore-dim-badge[data-dim="unexpected"]   { background: #eef4f0; color: var(--sage); }
+
 
 .explore-node-label { font-family: var(--font-display); font-size: 18px; color: var(--text-primary); line-height: 1.3; }
 .explore-header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
@@ -637,8 +611,22 @@ textarea, input { font-family: var(--font-body); }
             <div class="arc-body">
 
                 <div class="arc-section">
-                    <div class="arc-sec-label">Dimensions explored</div>
-                    <div id="coverageDims"></div>
+                    <div class="arc-sec-label">Map overview</div>
+                    <div style="display:flex;gap:18px;margin-bottom:4px;">
+                        <div>
+                            <div style="font-size:22px;font-weight:600;color:var(--text-primary);line-height:1" id="overviewTotal">0</div>
+                            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-top:3px;">Nodes</div>
+                        </div>
+                        <div>
+                            <div style="font-size:22px;font-weight:600;color:var(--text-primary);line-height:1" id="overviewDecisions">0</div>
+                            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-top:3px;">Decisions</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arc-section">
+                    <div class="arc-sec-label">Key decisions</div>
+                    <div id="decisionList"></div>
                 </div>
 
                 <div class="arc-section hidden" id="arcSecIdea">
@@ -814,34 +802,16 @@ textarea, input { font-family: var(--font-body); }
 'use strict';
 
 /* ============================================================
-   DIMENSIONS
+   BRANCH COLOURS — assigned by position, inherited by children
    ============================================================ */
-const DIMENSIONS = [
-    { id: 'problem',      label: 'Problem' },
-    { id: 'user',         label: 'Target User' },
-    { id: 'bizmodel',     label: 'Business Model' },
-    { id: 'distribution', label: 'Distribution' },
-    { id: 'moat',         label: 'Moat' },
-    { id: 'risk',         label: 'Risk' },
-    { id: 'unexpected',   label: 'Unexpected' },
+const BRANCH_COLORS = [
+    { node: 'var(--burgundy-light)',  border: 'var(--burgundy-mid)', text: 'var(--burgundy)' },
+    { node: 'var(--blue-grey-light)', border: 'var(--blue-grey)',    text: '#3d6375' },
+    { node: 'var(--amber-light)',     border: 'var(--amber-mid)',    text: '#7a4e1a' },
+    { node: 'var(--sage-light)',      border: 'var(--sage-mid)',     text: 'var(--sage)' },
+    { node: '#f0edf8',                border: '#c9bfe8',             text: '#6b5a9e' },
+    { node: '#fdf5ee',                border: '#e5c9a0',             text: '#8a5a2a' },
 ];
-
-function normalizeDim(str) {
-    if (!str) return null;
-    const s = str.toLowerCase().trim();
-    if (s.includes('problem') || s.includes('opportunit')) return 'problem';
-    if (s.includes('user') || s.includes('customer') || s.includes('audience') || s.includes('target')) return 'user';
-    if (s.includes('business') || s.includes('model') || s.includes('revenue') || s.includes('monetis') || s.includes('monetiz')) return 'bizmodel';
-    if (s.includes('distribut') || s.includes('go-to-market') || s.includes('gtm') || s.includes('acqui') || s.includes('channel') || s.includes('reach')) return 'distribution';
-    if (s.includes('moat') || s.includes('defensib') || s.includes('differenti') || s.includes('unfair') || s.includes('advantage')) return 'moat';
-    if (s.includes('risk') || s.includes('kill') || s.includes('fail') || s.includes('challenge') || s.includes('threat') || s.includes('critic')) return 'risk';
-    if (s.includes('unexpected') || s.includes('surpris') || s.includes('contrarian') || s.includes('unknown')) return 'unexpected';
-    return null;
-}
-
-function getDimLabel(dimId) {
-    return DIMENSIONS.find(d => d.id === dimId)?.label || null;
-}
 
 /* ============================================================
    STATE
@@ -867,32 +837,28 @@ async function fetchBranches(nodeId, isRoot, extra) {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
-                seedIdea:        session.seedIdea,
-                parentLabel:     node?.label || session.seedIdea,
-                parentDimension: node?.dimId ? getDimLabel(node.dimId) : null,
-                mapContext:      buildMapContext(),
-                isRoot:          !!isRoot,
-                extra:           extra || null
+                seedIdea:    session.seedIdea,
+                parentLabel: node?.label || session.seedIdea,
+                mapContext:  buildMapContext(),
+                isRoot:      !!isRoot,
+                extra:       extra || null
             })
         });
         if (!res.ok) throw new Error('API ' + res.status);
         const data = await res.json();
         return (data.branches || []).map(b => ({
             label:       b.label || '',
-            description: b.description || '',
-            dimId:       normalizeDim(b.dimension || b.label || '')
+            description: b.description || ''
         }));
     } catch (e) {
         console.error('fetchBranches:', e);
-        showToast('API error — check your Vercel env var ANTHROPIC_API_KEY');
+        showToast('API error — check ANTHROPIC_API_KEY in Vercel');
         return [];
     }
 }
 
 function buildMapContext() {
-    const lines = nodes
-        .filter(n => n.type !== 'central')
-        .map(n => (n.dimId ? `[${getDimLabel(n.dimId)}] ` : '') + n.label);
+    const lines = nodes.filter(n => n.type !== 'central').map(n => '- ' + n.label);
     return lines.length ? lines.join('\n') : 'Just starting.';
 }
 
@@ -913,14 +879,14 @@ async function startSession() {
     document.getElementById('arcEmptyNote').classList.add('hidden');
     document.getElementById('arcIdeaText').textContent = idea;
 
-    const root = createNode({ type: 'central', label: idea, dimId: null });
+    const root = createNode({ type: 'central', label: idea, colorIdx: -1 });
     renderMindMap();
-    showLoadingPanel('Mapping the structure of your idea…');
+    showLoadingPanel('Figuring out what needs deciding…');
 
     const branches = await fetchBranches(root.id, true);
     root.branches = branches;
     showExplorePanel(root.id);
-    updateCoverage();
+    updateMapOverview();
 }
 
 /* ============================================================
@@ -932,29 +898,33 @@ function showExplorePanel(nodeId) {
 
     session.selectedNodeId = nodeId;
 
-    // Highlight on map
+    // Highlight on canvas
     document.querySelectorAll('.node').forEach(el => el.classList.remove('node-active'));
     const el = document.querySelector(`[data-nid="${nodeId}"]`);
     if (el) el.classList.add('node-active');
 
     // Header
-    const isRoot  = node.type === 'central';
-    const dimText = node.dimId ? getDimLabel(node.dimId) : (isRoot ? 'Your idea' : 'Branch');
-    const badge   = document.getElementById('exploreNodeDim');
-    badge.textContent = dimText;
-    badge.dataset.dim = node.dimId || '';
+    const isRoot = node.type === 'central';
+    const badge  = document.getElementById('exploreNodeDim');
+    badge.textContent  = isRoot ? 'Your idea' : 'Figuring out';
+    badge.dataset.dim  = '';
+    badge.removeAttribute('style');
+    if (!isRoot && node.colorIdx >= 0) {
+        const c = BRANCH_COLORS[node.colorIdx % BRANCH_COLORS.length];
+        badge.style.background = c.node;
+        badge.style.color      = c.text;
+    }
     document.getElementById('exploreNodeLabel').textContent = node.label;
     document.getElementById('btnBackRoot').classList.toggle('hidden', isRoot);
 
-    // Show panel
+    // Switch panels
     document.getElementById('ideaWrap').classList.add('hidden');
     document.getElementById('loadingWrap').classList.add('hidden');
     document.getElementById('exploreWrap').classList.remove('hidden');
 
     // Left panel context
     document.getElementById('arcSecFocus').classList.remove('hidden');
-    document.getElementById('arcFocusText').textContent =
-        (node.dimId ? '[' + getDimLabel(node.dimId) + '] ' : '') + node.label;
+    document.getElementById('arcFocusText').textContent = node.label;
 
     // Branches
     if (node.branches) {
@@ -976,32 +946,18 @@ async function loadBranchesForNode(nodeId, extra) {
 function renderBranchCards(branches, nodeId) {
     currentBranches = branches || [];
     const list = document.getElementById('branchList');
+
     if (!branches || branches.length === 0) {
-        list.innerHTML = '<div class="branch-loading" style="font-size:12px;">Nothing generated — try regenerating.</div>';
+        list.innerHTML = '<div class="branch-loading" style="font-size:12px;">Nothing came back — try regenerating.</div>';
         return;
     }
-    list.innerHTML = branches.map((b, i) => {
-        const dimStyle = b.dimId ? dimCardStyle(b.dimId) : '';
-        const dimText  = b.dimId ? getDimLabel(b.dimId) : '';
-        return `<button class="branch-card" onclick="addBranch(${i})">
+
+    list.innerHTML = branches.map((b, i) =>
+        `<button class="branch-card" onclick="addBranch(${i})">
             <div class="branch-card-label">${esc(b.label)}</div>
             <div class="branch-card-desc">${esc(b.description)}</div>
-            ${dimText ? `<div class="branch-card-dim" style="${dimStyle}">${esc(dimText)}</div>` : ''}
-        </button>`;
-    }).join('');
-}
-
-function dimCardStyle(dimId) {
-    const s = {
-        problem:      'background:var(--burgundy-light);color:var(--burgundy)',
-        user:         'background:var(--blue-grey-light);color:var(--blue-grey)',
-        bizmodel:     'background:var(--amber-light);color:var(--amber)',
-        distribution: 'background:var(--sage-light);color:var(--sage)',
-        moat:         'background:#f0edf8;color:#6b5a9e',
-        risk:         'background:#fdf0ee;color:#c05a48',
-        unexpected:   'background:#eef4f0;color:var(--sage)',
-    };
-    return s[dimId] || '';
+        </button>`
+    ).join('');
 }
 
 async function addBranch(idx) {
@@ -1010,15 +966,22 @@ async function addBranch(idx) {
 
     const parentId = session.selectedNodeId;
     const sibs     = nodes.filter(n => n.parentId === parentId);
-    const newNode  = createNode({
-        type: 'answer', label: branch.label, dimId: branch.dimId || null,
+
+    // Inherit colour from parent chain, or assign new one for level-1 nodes
+    const parent   = nodes.find(n => n.id === parentId);
+    const colorIdx = parent && parent.colorIdx >= 0
+        ? parent.colorIdx
+        : sibs.length % BRANCH_COLORS.length;
+
+    const newNode = createNode({
+        type: 'answer', label: branch.label, colorIdx,
         parentId, siblingIndex: sibs.length, totalSiblings: sibs.length + 1, isNew: true
     });
 
     repositionSiblings(parentId);
     resolveCollisions();
     renderMindMap();
-    updateCoverage();
+    updateMapOverview();
     panToNode(newNode);
     showExplorePanel(newNode.id);
 }
@@ -1026,17 +989,24 @@ async function addBranch(idx) {
 function addCustomBranch() {
     const val = document.getElementById('customBranchTa').value.trim();
     if (!val || !session.selectedNodeId) return;
+
     const parentId = session.selectedNodeId;
     const sibs     = nodes.filter(n => n.parentId === parentId);
-    const newNode  = createNode({
-        type: 'answer', label: val, dimId: null,
+    const parent   = nodes.find(n => n.id === parentId);
+    const colorIdx = parent && parent.colorIdx >= 0
+        ? parent.colorIdx
+        : sibs.length % BRANCH_COLORS.length;
+
+    const newNode = createNode({
+        type: 'answer', label: val, colorIdx,
         parentId, siblingIndex: sibs.length, totalSiblings: sibs.length + 1, isNew: true
     });
+
     document.getElementById('customBranchTa').value = '';
     repositionSiblings(parentId);
     resolveCollisions();
     renderMindMap();
-    updateCoverage();
+    updateMapOverview();
     panToNode(newNode);
     showExplorePanel(newNode.id);
 }
@@ -1059,31 +1029,31 @@ function goToRoot() {
 }
 
 /* ============================================================
-   EXPLORE ACTIONS
+   EXPLORE ACTIONS (bottom bar)
    ============================================================ */
 async function exploreAction(type) {
     if (!session.started) return;
 
     if (type === 'missing') {
-        const missing = getMissingDimensions();
-        if (missing.length === 0) { showToast('All 7 dimensions covered — great structure!'); return; }
-        showToast('Still missing: ' + missing.slice(0, 3).map(d => d.label).join(', '));
-        updateArcSuggest(missing[0].label);
+        if (!session.selectedNodeId) { showToast('Select a node first'); return; }
+        showToast('Finding what\'s been overlooked…');
+        await loadBranchesForNode(session.selectedNodeId,
+            'Focus only on angles that are MISSING from what\'s already been mapped. What important aspects of building this out haven\'t been considered yet?');
         return;
     }
 
     if (!session.selectedNodeId) { showToast('Click a node first'); return; }
 
     const extras = {
-        unexpected: 'Focus on surprising, contrarian, or non-obvious angles that most people would completely miss.',
-        challenge:  'Focus on what could go wrong — hidden risks, flawed assumptions, reasons this direction might be fundamentally wrong.',
-        deepen:     'Go one concrete level deeper. Be specific and tactical, not strategic. What would an operator actually do next?',
-        zoom:       'Step back to the real underlying goal. What is the broader context that makes this node matter — or not?',
+        unexpected: 'Focus on surprising, non-obvious, or counterintuitive directions that most people would never think of first.',
+        challenge:  'Push in a completely different direction. What\'s the opposite approach? What would you do if the current direction was wrong?',
+        deepen:     'Go one concrete level more specific. Not strategies — actual tangible things: specific features, moments, interactions, details.',
+        zoom:       'Zoom out. What is the bigger-picture decision this sits inside? What are the options at that higher level?',
     };
     const msgs = {
         unexpected: 'Finding surprising angles…',
-        challenge:  'Challenging this direction…',
-        deepen:     'Going deeper…',
+        challenge:  'Flipping the direction…',
+        deepen:     'Going more specific…',
         zoom:       'Zooming out…',
     };
 
@@ -1097,42 +1067,41 @@ async function exploreAction(type) {
 }
 
 /* ============================================================
-   COVERAGE
+   MAP OVERVIEW (left panel)
    ============================================================ */
-function updateCoverage() {
-    const coveredIds = new Set(nodes.filter(n => n.dimId).map(n => n.dimId));
-    const count = coveredIds.size;
+function updateMapOverview() {
+    const total     = nodes.filter(n => n.type !== 'central').length;
+    const decisions = nodes.filter(n => n.parentId && nodes.find(p => p.id === n.parentId && p.type === 'central')).length;
 
-    document.getElementById('coverageState').textContent = count + ' of 7';
-    const pipOn = Math.round((count / 7) * 5);
+    document.getElementById('overviewTotal').textContent    = total;
+    document.getElementById('overviewDecisions').textContent = decisions;
+
+    // Coverage pips (5 pips, target = 6 top-level decisions)
+    const pipOn = Math.min(5, Math.round((decisions / 6) * 5));
     document.querySelectorAll('.coverage-pip').forEach((p, i) => p.classList.toggle('on', i < pipOn));
+    document.getElementById('coverageState').textContent = total + ' nodes';
 
-    document.getElementById('coverageDims').innerHTML = DIMENSIONS.map(d =>
-        `<div class="cov-dim ${coveredIds.has(d.id) ? 'covered' : ''}" onclick="focusDimension('${d.id}')">
-            <div class="cov-dot"></div>
-            <span class="cov-label">${d.label}</span>
-        </div>`
-    ).join('');
+    // Top-level decision list
+    const topNodes = nodes.filter(n => n.parentId && nodes.find(p => p.id === n.parentId && p.type === 'central'));
+    const container = document.getElementById('decisionList');
+    container.innerHTML = topNodes.map(n => {
+        const c = n.colorIdx >= 0 ? BRANCH_COLORS[n.colorIdx % BRANCH_COLORS.length] : null;
+        const dot = c ? `background:${c.text}` : 'background:var(--border-md)';
+        return `<div class="decision-item" onclick="showExplorePanel('${n.id}')">
+            <div class="decision-dot" style="${dot}"></div>
+            <span class="decision-label">${esc(trunc(n.label, 36))}</span>
+        </div>`;
+    }).join('') || '<div class="arc-empty-note" style="font-size:11px;">Top-level decisions will appear here.</div>';
 
-    const missing = getMissingDimensions();
-    if (missing.length > 0 && session.started) updateArcSuggest(missing[0].label);
-    else document.getElementById('arcSecSuggest').classList.add('hidden');
-}
-
-function getMissingDimensions() {
-    const covered = new Set(nodes.filter(n => n.dimId).map(n => n.dimId));
-    return DIMENSIONS.filter(d => !covered.has(d.id));
-}
-
-function updateArcSuggest(label) {
-    document.getElementById('arcSecSuggest').classList.remove('hidden');
-    document.getElementById('arcSuggestText').textContent = label;
-}
-
-function focusDimension(dimId) {
-    const node = nodes.find(n => n.dimId === dimId);
-    if (node) showExplorePanel(node.id);
-    else showToast('No ' + getDimLabel(dimId) + ' nodes yet — explore that dimension');
+    // Suggest if fewer than 4 decisions
+    if (decisions < 4 && session.started) {
+        document.getElementById('arcSecSuggest').classList.remove('hidden');
+        document.getElementById('arcSuggestText').textContent =
+            decisions === 0 ? 'Start by picking a branch direction from the panel.' :
+            'Keep exploring — aim for at least 4-6 key decisions to build a solid proposition.';
+    } else {
+        document.getElementById('arcSecSuggest').classList.add('hidden');
+    }
 }
 
 /* ============================================================
@@ -1141,32 +1110,29 @@ function focusDimension(dimId) {
 function exportStructure() {
     if (!session.started || nodes.length < 2) { showToast('Map something first'); return; }
 
-    const byDim = {};
-    DIMENSIONS.forEach(d => { byDim[d.id] = []; });
-    byDim['other'] = [];
-    nodes.filter(n => n.type !== 'central').forEach(n => {
-        const key = n.dimId && byDim[n.dimId] !== undefined ? n.dimId : 'other';
-        byDim[key].push(n);
+    const topLevel = nodes.filter(n =>
+        n.parentId && nodes.find(p => p.id === n.parentId && p.type === 'central'));
+
+    let out = 'CONCEPT MAP\n' + session.seedIdea + '\n' + '─'.repeat(52) + '\n\n';
+
+    topLevel.forEach(top => {
+        out += top.label.toUpperCase() + '\n';
+        function addChildren(parentId, indent) {
+            nodes.filter(n => n.parentId === parentId).forEach(n => {
+                out += '  '.repeat(indent) + '· ' + n.label + '\n';
+                addChildren(n.id, indent + 1);
+            });
+        }
+        addChildren(top.id, 1);
+        out += '\n';
     });
 
-    let out = 'CONCEPT STRUCTURE\n' + session.seedIdea + '\n' + '─'.repeat(52) + '\n\n';
-    DIMENSIONS.forEach(d => {
-        if (!byDim[d.id] || byDim[d.id].length === 0) return;
-        out += d.label.toUpperCase() + '\n';
-        byDim[d.id].forEach(n => { out += '  · ' + n.label + '\n'; });
-        out += '\n';
-    });
-    if (byDim['other'].length > 0) {
-        out += 'OTHER\n';
-        byDim['other'].forEach(n => { out += '  · ' + n.label + '\n'; });
-        out += '\n';
-    }
     const total = nodes.filter(n => n.type !== 'central').length;
-    const dims  = DIMENSIONS.filter(d => byDim[d.id] && byDim[d.id].length > 0).length;
-    out += '─'.repeat(52) + '\n' + total + ' nodes · ' + dims + ' of 7 dimensions';
+    out += '─'.repeat(52) + '\n' + total + ' nodes · ' + topLevel.length + ' key decisions';
 
     document.getElementById('exportOutput').textContent = out;
-    document.getElementById('exportDrawerSub').textContent = total + ' nodes · ' + dims + ' of 7 dimensions explored';
+    document.getElementById('exportDrawerSub').textContent =
+        total + ' nodes · ' + topLevel.length + ' decisions explored';
     document.getElementById('exportDrawer').classList.add('open');
     showOverlay();
 }
@@ -1199,7 +1165,7 @@ function onNodeClick(ax, ay, node) {
 function onNodeRightClick(e, ax, ay, node) {
     e.preventDefault();
     tooltipNodeId = node.id;
-    document.getElementById('ttCat').textContent = node.dimId ? getDimLabel(node.dimId) : 'Branch';
+    document.getElementById('ttCat').textContent = node.type === 'central' ? 'Your idea' : 'Decision';
     document.getElementById('ttVal').textContent  = node.label;
     const tt  = document.getElementById('nodeTooltip');
     const ttW = 220, ttH = 110;
@@ -1216,7 +1182,10 @@ function hideNodeTooltip() {
     tooltipNodeId = null;
 }
 
-function exploreFromTt() { const id = tooltipNodeId; hideNodeTooltip(); if (id) showExplorePanel(id); }
+function exploreFromTt() {
+    const id = tooltipNodeId; hideNodeTooltip();
+    if (id) showExplorePanel(id);
+}
 
 function removeFromTt() {
     const id = tooltipNodeId; hideNodeTooltip();
@@ -1231,7 +1200,7 @@ function removeFromTt() {
     if (parentId) repositionSiblings(parentId);
     resolveCollisions();
     renderMindMap();
-    updateCoverage();
+    updateMapOverview();
     if (toRemove.has(session.selectedNodeId)) {
         const parent = nodes.find(n => n.id === parentId);
         if (parent) showExplorePanel(parentId); else goToRoot();
@@ -1242,10 +1211,10 @@ function removeFromTt() {
 /* ============================================================
    NODE CREATION + LAYOUT
    ============================================================ */
-function createNode({ type, label, dimId = null, parentId = null, siblingIndex = 0, totalSiblings = 1, x, y, isNew = false }) {
+function createNode({ type, label, colorIdx = -1, parentId = null, siblingIndex = 0, totalSiblings = 1, x, y, isNew = false }) {
     const id  = nextId();
     const pos = (x !== undefined && y !== undefined) ? { x, y } : calcNodePos(parentId, siblingIndex, totalSiblings);
-    const node = { id, type, label, dimId, parentId, x: pos.x, y: pos.y, isNew, branches: null };
+    const node = { id, type, label, colorIdx, parentId, x: pos.x, y: pos.y, isNew, branches: null };
     nodes.push(node);
     return node;
 }
@@ -1271,8 +1240,8 @@ function calcNodePos(parentId, siblingIndex, totalSiblings) {
         return { x: Math.cos(angle) * DIST, y: Math.sin(angle) * DIST };
     }
 
-    const gp   = nodes.find(n => n.id === parent.parentId);
-    const base = gp ? Math.atan2(parent.y - gp.y, parent.x - gp.x) : 0;
+    const gp     = nodes.find(n => n.id === parent.parentId);
+    const base   = gp ? Math.atan2(parent.y - gp.y, parent.x - gp.x) : 0;
     const spread = totalSiblings <= 2 ? Math.PI / 3.5 :
                    totalSiblings <= 4 ? Math.PI / 2.5 : Math.PI / 2.1;
     const offset = totalSiblings > 1 ? (siblingIndex / (totalSiblings - 1) - 0.5) * spread : 0;
@@ -1325,6 +1294,7 @@ function renderMindMap() {
     container.innerHTML = '';
     svg.innerHTML       = '';
 
+    // Lines
     nodes.forEach(node => {
         if (!node.parentId) return;
         const par = nodes.find(n => n.id === node.parentId);
@@ -1334,28 +1304,38 @@ function renderMindMap() {
         const mx = (x1 + x2) / 2;
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);
-        path.setAttribute('class', `map-line solid${node.dimId ? ' dim-' + node.dimId : ''}`);
+        const c = node.colorIdx >= 0 ? BRANCH_COLORS[node.colorIdx % BRANCH_COLORS.length] : null;
+        path.setAttribute('class', 'map-line solid');
+        if (c) path.setAttribute('style', `stroke:${c.border}`);
         svg.appendChild(path);
     });
 
+    // Nodes
     nodes.forEach(node => {
         const ax = cx + node.x, ay = cy + node.y;
         const el = document.createElement('div');
-        const dimCls    = node.dimId ? ` node-dim-${node.dimId}` : '';
         const activeCls = node.id === session.selectedNodeId ? ' node-active' : '';
-        el.className    = `node node-${node.type === 'central' ? 'central' : 'answer'}${dimCls}${activeCls}${node.isNew ? ' node-new' : ''}`;
+        el.className    = `node node-${node.type === 'central' ? 'central' : 'answer'}${activeCls}${node.isNew ? ' node-new' : ''}`;
         el.dataset.nid  = node.id;
         el.style.left   = ax + 'px';
         el.style.top    = ay + 'px';
+
         el.onclick       = e => { e.stopPropagation(); if (!_panMoved) onNodeClick(ax, ay, node); };
         el.oncontextmenu = e => { e.stopPropagation(); onNodeRightClick(e, ax, ay, node); };
 
         if (node.type === 'central') {
             el.innerHTML = `<div class="node-inner"><div class="n-sub">Your idea</div><div class="n-label">${esc(trunc(node.label, 65))}</div></div>`;
         } else {
-            const cat = node.dimId ? getDimLabel(node.dimId) : '';
-            el.innerHTML = `<div class="node-inner">${cat ? `<div class="n-cat">${esc(cat)}</div>` : ''}<div class="n-label">${esc(trunc(node.label, 44))}</div></div>`;
+            el.innerHTML = `<div class="node-inner"><div class="n-label">${esc(trunc(node.label, 44))}</div></div>`;
+            if (node.colorIdx >= 0) {
+                const c   = BRANCH_COLORS[node.colorIdx % BRANCH_COLORS.length];
+                const inn = el.querySelector('.node-inner');
+                inn.style.background  = c.node;
+                inn.style.borderColor = c.border;
+                inn.style.color       = c.text;
+            }
         }
+
         container.appendChild(el);
         node.isNew = false;
     });
@@ -1416,7 +1396,7 @@ window.addEventListener('resize', () => {
 /* ============================================================
    PAN TO NODE
    ============================================================ */
-function panToNode(node, animate) {
+function panToNode(node) {
     if (!node) return;
     const canvas = document.getElementById('canvasWrap');
     pan.x = -node.x + canvas.offsetWidth  * 0.05;
@@ -1467,12 +1447,12 @@ function useExample(el) {
    UTILS
    ============================================================ */
 function trunc(s, n) { return s && s.length > n ? s.slice(0, n).trimEnd() + '…' : (s || ''); }
-function esc(s) { return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 /* ============================================================
    INIT
    ============================================================ */
-updateCoverage();
+updateMapOverview();
 document.getElementById('ideaTextarea').addEventListener('keydown', e => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) startSession();
 });

@@ -6,12 +6,12 @@ module.exports = async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-    const { seedIdea, parentLabel, parentDimension, mapContext, isRoot, extra } = req.body || {};
+    const { seedIdea, parentLabel, mapContext, isRoot, extra } = req.body || {};
     if (!seedIdea) return res.status(400).json({ error: 'seedIdea required' });
 
     const prompt = isRoot
         ? buildRootPrompt(seedIdea)
-        : buildBranchPrompt(seedIdea, parentLabel, parentDimension, mapContext, extra);
+        : buildBranchPrompt(seedIdea, parentLabel, mapContext, extra);
 
     try {
         const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -35,7 +35,6 @@ module.exports = async function handler(req, res) {
 
         const data = await response.json();
         const text = data.content?.[0]?.text || '[]';
-
         const jsonMatch = text.match(/\[[\s\S]*?\]/);
         let branches = [];
         if (jsonMatch) {
@@ -49,53 +48,49 @@ module.exports = async function handler(req, res) {
 };
 
 function buildRootPrompt(seedIdea) {
-    return `You are a sharp business strategist, product thinker, and commercial operator. Someone has an idea: "${seedIdea}"
+    return `Someone is building out this idea: "${seedIdea}"
 
-Generate exactly 6 structural dimensions to explore. Cover the critical angles anyone building this needs to think through. Make every label and description SPECIFIC to this idea — not generic startup advice.
+Help them figure out what it actually is. Generate 5-6 key things they need to decide to properly define and build this proposition.
 
-Cover these angles (in your own words, specific to the idea):
-1. The core problem or opportunity this addresses
-2. The specific target user — their situation, pain, and motivation
-3. How money actually flows — the business model
-4. How you reach and acquire users at scale
-5. What makes this defensible — moat or differentiation
-6. The critical risk — what most likely kills or limits this
+These are DESIGN DECISIONS — not business analysis or risk assessment. Think about:
+- What the experience actually feels like for the person using it
+- Who specifically it is for (their situation, not just a demographic)
+- What the core mechanic or interaction is
+- What it delivers — the real value someone gets
+- What makes it unmistakably this, not a generic version
+- What brings someone back (the retention hook, not as a risk but as a design choice)
+
+Make every label SPECIFIC to "${seedIdea}". These should feel like things a thoughtful founder or product designer would actually sit down and work through.
 
 Return ONLY valid JSON array, no other text:
 [
-  {"label": "5-8 word specific label", "description": "one punchy sentence specific to this idea", "dimension": "Problem"},
-  {"label": "...", "description": "...", "dimension": "Target User"},
-  {"label": "...", "description": "...", "dimension": "Business Model"},
-  {"label": "...", "description": "...", "dimension": "Distribution"},
-  {"label": "...", "description": "...", "dimension": "Moat"},
-  {"label": "...", "description": "...", "dimension": "Risk"}
+  {"label": "5-8 word specific label", "description": "one sentence on why this is worth figuring out"},
+  ...
 ]`;
 }
 
-function buildBranchPrompt(seedIdea, parentLabel, parentDimension, mapContext, extra) {
-    const focus = extra
-        ? `\n\nIMPORTANT: ${extra}`
-        : '';
+function buildBranchPrompt(seedIdea, parentLabel, mapContext, extra) {
+    const focusNote = extra ? `\n\nAngle to explore: ${extra}` : '';
 
-    return `You are a sharp business strategist. The core idea is: "${seedIdea}"
+    return `Someone is building: "${seedIdea}"
 
-What's been explored so far:
-${mapContext || 'Just starting — only the seed idea exists.'}
+What's been decided or explored so far:
+${mapContext || 'Just starting out.'}
 
-The user wants to explore deeper into: "${parentLabel}"${parentDimension ? ` (${parentDimension})` : ''}${focus}
+They're now figuring out: "${parentLabel}"
 
-Generate exactly 5 specific, insightful branch directions from this node. Rules:
-- Concrete and specific to THIS idea and context — never generic
-- Mix of expected and at least 1-2 unexpected or contrarian angles
-- Informed by what's already on the map (don't repeat what's there)
-- Each should spark a genuine "hm, that's interesting" reaction
+Generate 5 specific OPTIONS for what this could be. These are buildable directions — concrete choices a designer or founder would actually consider and debate.
+
+Rules:
+- Specific to THIS idea (no generic phrases like "user-friendly interface" or "scalable platform")
+- About BUILDING the thing, not analyzing it — no risks, no market sizing
+- At least one unexpected or non-obvious direction
+- Each option should be a real creative or product decision, not a category or framework
+- Brief, punchy labels — like a founder pitching an approach${focusNote}
 
 Return ONLY valid JSON array, no other text:
 [
-  {"label": "5-8 word specific label", "description": "one punchy sentence"},
-  {"label": "...", "description": "..."},
-  {"label": "...", "description": "..."},
-  {"label": "...", "description": "..."},
-  {"label": "...", "description": "..."}
+  {"label": "5-8 word specific option", "description": "one sentence on what this actually means"},
+  ...
 ]`;
 }
