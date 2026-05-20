@@ -1,0 +1,2146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptMap — Turn rough ideas into brilliant Claude prompts</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+
+/* ============================================================
+   CSS VARIABLES — Design system
+   ============================================================ */
+:root {
+    /* Backgrounds */
+    --bg-primary:   #F7F4EF;
+    --bg-secondary: #FFFFFF;
+    --bg-surface:   #EFEBE5;
+    --bg-ink:       #1C1917;
+
+    /* Text */
+    --text-primary:   #1C1917;
+    --text-secondary: #57534E;
+    --text-muted:     #A8A29E;
+    --text-inverse:   #FAF9F7;
+
+    /* Accents */
+    --burgundy:       #7C3A52;
+    --burgundy-light: #F3E8ED;
+    --burgundy-mid:   #E8C9D3;
+    --blush:          #E4CFC6;
+    --blue-grey:      #6B8B9E;
+    --blue-grey-light:#E6EFF5;
+    --amber:          #B5763A;
+    --amber-light:    #F6EDD8;
+    --amber-mid:      #E5C07B;
+
+    /* Borders */
+    --border-xs:  #F0EDE8;
+    --border-sm:  #E7E3DD;
+    --border-md:  #D4CFC8;
+    --border-lg:  #A8A29E;
+
+    /* Shadows */
+    --shadow-xs: 0 1px 2px rgba(28,25,23,0.05);
+    --shadow-sm: 0 2px 6px rgba(28,25,23,0.07);
+    --shadow-md: 0 4px 16px rgba(28,25,23,0.09);
+    --shadow-lg: 0 8px 32px rgba(28,25,23,0.12);
+    --shadow-xl: 0 16px 48px rgba(28,25,23,0.16);
+
+    /* Radii */
+    --r-sm:   8px;
+    --r-md:   12px;
+    --r-lg:   16px;
+    --r-xl:   24px;
+    --r-full: 9999px;
+
+    /* Typography */
+    --font-display: 'DM Serif Display', Georgia, serif;
+    --font-body:    'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+    /* Layout */
+    --topbar-h:    60px;
+    --bottombar-h: 64px;
+    --arc-w:       272px;
+    --q-w:         356px;
+
+    /* Motion */
+    --ease-fast: 140ms ease;
+    --ease-med:  240ms ease;
+    --ease-slow: 380ms cubic-bezier(0.4,0,0.2,1);
+}
+
+
+/* ============================================================
+   RESET
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+    font-family: var(--font-body);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+button { font-family: var(--font-body); }
+textarea, input { font-family: var(--font-body); }
+
+
+/* ============================================================
+   APP SHELL
+   ============================================================ */
+.app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+
+/* ============================================================
+   TOP BAR
+   ============================================================ */
+.top-bar {
+    height: var(--topbar-h);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-sm);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 14px;
+    flex-shrink: 0;
+    z-index: 100;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+.logo-mark {
+    width: 28px; height: 28px;
+    background: var(--bg-ink);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+}
+.logo-name {
+    font-family: var(--font-display);
+    font-size: 17px;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+.top-bar-sep {
+    width: 1px; height: 20px;
+    background: var(--border-sm);
+    flex-shrink: 0;
+}
+
+/* Destination badge */
+.dest-badge {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 11px;
+    background: var(--burgundy-light);
+    border: 1px solid var(--burgundy-mid);
+    border-radius: var(--r-full);
+    cursor: pointer;
+    transition: background var(--ease-fast);
+    flex-shrink: 0;
+}
+.dest-badge:hover { background: var(--burgundy-mid); }
+.dest-badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--burgundy);
+}
+.dest-badge-text {
+    font-size: 12px; font-weight: 500;
+    color: var(--burgundy);
+    letter-spacing: 0.01em;
+}
+.dest-badge-change {
+    font-size: 11px;
+    color: var(--burgundy);
+    opacity: 0.55;
+}
+
+/* Quality indicator */
+.quality-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-left: auto;
+}
+.quality-label {
+    font-size: 11px; font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.quality-pips {
+    display: flex; gap: 3px;
+}
+.quality-pip {
+    width: 22px; height: 4px;
+    border-radius: var(--r-full);
+    background: var(--border-sm);
+    transition: background var(--ease-med);
+}
+.quality-pip.on  { background: var(--bg-ink); }
+.quality-pip.half { background: var(--blush); }
+
+.quality-state {
+    font-size: 12px; font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* Generate button */
+.btn-gen {
+    display: flex; align-items: center; gap: 7px;
+    padding: 8px 16px;
+    background: var(--bg-ink);
+    color: var(--text-inverse);
+    border: none; border-radius: var(--r-md);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: opacity var(--ease-fast), transform var(--ease-fast);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.btn-gen:hover  { opacity: 0.84; }
+.btn-gen:active { transform: scale(0.97); }
+
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+.main-content {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    min-height: 0;
+}
+
+
+/* ============================================================
+   ARC PANEL — left
+   ============================================================ */
+.arc-panel {
+    width: var(--arc-w);
+    flex-shrink: 0;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-sm);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: width var(--ease-slow), border-color var(--ease-slow);
+}
+.arc-panel.collapsed {
+    width: 0;
+    border-right-color: transparent;
+}
+
+.arc-header {
+    padding: 15px 18px 12px;
+    border-bottom: 1px solid var(--border-sm);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+}
+.arc-title {
+    font-size: 10.5px; font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+.arc-toggle {
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; cursor: pointer;
+    border-radius: var(--r-sm);
+    color: var(--text-muted);
+    transition: background var(--ease-fast), color var(--ease-fast);
+}
+.arc-toggle:hover { background: var(--bg-surface); color: var(--text-primary); }
+
+.arc-body {
+    flex: 1; overflow-y: auto;
+    padding: 18px 18px 24px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-sm) transparent;
+}
+.arc-body::-webkit-scrollbar { width: 3px; }
+.arc-body::-webkit-scrollbar-thumb { background: var(--border-sm); border-radius: 2px; }
+
+/* Stage track */
+.arc-stages { margin-bottom: 22px; }
+.arc-stage-row {
+    display: flex; align-items: flex-start; gap: 10px;
+}
+.arc-stage-track {
+    display: flex; flex-direction: column; align-items: center;
+    flex-shrink: 0;
+}
+.arc-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-md);
+    background: var(--bg-primary);
+    margin-top: 3px;
+    flex-shrink: 0;
+    transition: all var(--ease-med);
+}
+.arc-dot.done    { background: var(--bg-ink); border-color: var(--bg-ink); }
+.arc-dot.current { background: var(--burgundy); border-color: var(--burgundy); box-shadow: 0 0 0 3px var(--burgundy-light); }
+
+.arc-connector {
+    width: 1px; height: 18px;
+    background: var(--border-sm);
+    margin: 2px 0;
+    transition: background var(--ease-med);
+}
+.arc-connector.done { background: var(--bg-ink); }
+
+.arc-stage-text {
+    font-size: 11.5px; color: var(--text-muted);
+    padding-bottom: 18px; line-height: 1.3;
+    transition: color var(--ease-med);
+    padding-top: 1px;
+}
+.arc-stage-text.done    { color: var(--text-secondary); }
+.arc-stage-text.current { color: var(--text-primary); font-weight: 500; }
+
+/* Narrative sections */
+.arc-section { margin-bottom: 18px; }
+.arc-sec-label {
+    font-size: 10px; font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+.arc-sec-body {
+    font-size: 12.5px; color: var(--text-secondary);
+    line-height: 1.65;
+}
+.arc-sec-body.strong { color: var(--text-primary); font-size: 13px; }
+
+.arc-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.arc-tag {
+    padding: 3px 8px;
+    border-radius: var(--r-full);
+    font-size: 11px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-sm);
+    color: var(--text-muted);
+}
+.arc-tag.missing {
+    background: var(--amber-light);
+    border-color: var(--amber-mid);
+    color: var(--amber);
+}
+
+.arc-empty-note {
+    font-size: 12px; color: var(--text-muted);
+    line-height: 1.7;
+    padding-top: 4px;
+}
+
+
+/* ============================================================
+   CANVAS
+   ============================================================ */
+.canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-primary);
+    /* dot grid */
+    background-image: radial-gradient(circle, var(--border-sm) 1px, transparent 1px);
+    background-size: 26px 26px;
+}
+
+.canvas-svg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.canvas-nodes {
+    position: absolute; inset: 0;
+}
+
+/* Nodes */
+.node {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    transition: transform var(--ease-fast);
+    user-select: none;
+}
+.node:hover { transform: translate(-50%, -50%) scale(1.04); }
+.node:active { transform: translate(-50%, -50%) scale(0.97); }
+
+.node-inner {
+    border-radius: var(--r-xl);
+    padding: 13px 20px;
+    max-width: 190px;
+    text-align: center;
+    box-shadow: var(--shadow-md);
+    transition: box-shadow var(--ease-fast);
+}
+.node:hover .node-inner { box-shadow: var(--shadow-lg); }
+
+/* Central */
+.node-central .node-inner {
+    background: var(--bg-ink);
+    color: var(--text-inverse);
+    padding: 16px 24px;
+    max-width: 210px;
+}
+.node-central .n-label {
+    font-family: var(--font-display);
+    font-size: 15px; line-height: 1.35;
+}
+.node-central .n-sub {
+    font-size: 10px; opacity: 0.45;
+    margin-top: 3px;
+    text-transform: uppercase; letter-spacing: 0.07em;
+}
+
+/* Answer */
+.node-answer .node-inner {
+    background: var(--bg-secondary);
+    border: 1.5px solid var(--border-sm);
+}
+.node-answer .n-cat {
+    font-size: 9px; font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.09em; text-transform: uppercase;
+    margin-bottom: 3px;
+}
+.node-answer .n-label {
+    font-size: 12.5px; font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.35;
+}
+.node-answer:hover .node-inner { border-color: var(--border-md); }
+
+/* Destination */
+.node-dest .node-inner {
+    background: var(--burgundy-light);
+    border: 1.5px solid var(--burgundy-mid);
+}
+.node-dest .n-cat  { color: var(--burgundy); opacity: 0.7; }
+.node-dest .n-label { color: var(--burgundy); }
+
+/* Calibration */
+.node-calib .node-inner {
+    background: var(--amber-light);
+    border: 1.5px solid var(--amber-mid);
+}
+.node-calib .n-cat  { color: var(--amber); opacity: 0.8; }
+.node-calib .n-label { color: var(--amber); }
+
+/* Active / focused */
+.node-active .node-inner {
+    box-shadow: 0 0 0 3px var(--blue-grey-light), var(--shadow-md);
+    border-color: var(--blue-grey) !important;
+}
+
+/* Canvas empty state */
+.canvas-empty {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center; pointer-events: none;
+}
+.canvas-empty-title {
+    font-family: var(--font-display);
+    font-size: 26px; color: var(--text-primary);
+    margin-bottom: 8px;
+}
+.canvas-empty-sub {
+    font-size: 14px; color: var(--text-muted);
+    max-width: 280px; line-height: 1.6;
+}
+
+/* SVG lines */
+.map-line {
+    fill: none;
+    stroke: var(--border-md);
+    stroke-width: 1.5;
+    stroke-dasharray: 5 4;
+    stroke-linecap: round;
+}
+.map-line.solid     { stroke-dasharray: none; }
+.map-line.calib     { stroke: var(--amber-mid); }
+.map-line.dest      { stroke: var(--burgundy-mid); }
+
+/* Node appear animation */
+@keyframes nodeIn {
+    from { opacity: 0; transform: translate(-50%,-50%) scale(0.75); }
+    to   { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+}
+.node-new { animation: nodeIn 320ms cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+
+/* ============================================================
+   QUESTION PANEL — right
+   ============================================================ */
+.q-panel {
+    width: var(--q-w);
+    flex-shrink: 0;
+    background: var(--bg-secondary);
+    border-left: 1px solid var(--border-sm);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Idea input state */
+.idea-wrap {
+    padding: 28px 22px 22px;
+    flex: 1; overflow-y: auto;
+}
+.idea-title {
+    font-family: var(--font-display);
+    font-size: 22px; color: var(--text-primary);
+    line-height: 1.3; margin-bottom: 6px;
+}
+.idea-sub {
+    font-size: 13px; color: var(--text-muted);
+    line-height: 1.6; margin-bottom: 18px;
+}
+.idea-textarea {
+    width: 100%; min-height: 104px;
+    background: var(--bg-primary);
+    border: 1.5px solid var(--border-sm);
+    border-radius: var(--r-md);
+    padding: 12px 14px;
+    font-size: 14px; color: var(--text-primary);
+    resize: none; outline: none;
+    line-height: 1.6;
+    transition: border-color var(--ease-fast), box-shadow var(--ease-fast);
+}
+.idea-textarea::placeholder { color: var(--text-muted); }
+.idea-textarea:focus {
+    border-color: var(--blue-grey);
+    box-shadow: 0 0 0 3px var(--blue-grey-light);
+}
+.idea-chips {
+    display: flex; flex-wrap: wrap; gap: 5px;
+    margin-top: 10px;
+}
+.idea-chip {
+    padding: 4px 10px;
+    background: transparent;
+    border: 1px solid var(--border-sm);
+    border-radius: var(--r-full);
+    font-size: 11.5px; color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--ease-fast);
+}
+.idea-chip:hover {
+    background: var(--bg-surface);
+    border-color: var(--border-md);
+    color: var(--text-secondary);
+}
+.btn-start {
+    width: 100%; margin-top: 18px;
+    padding: 12px 20px;
+    background: var(--bg-ink); color: var(--text-inverse);
+    border: none; border-radius: var(--r-md);
+    font-size: 14px; font-weight: 500;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: opacity var(--ease-fast);
+}
+.btn-start:hover { opacity: 0.84; }
+
+/* Question state */
+.q-header {
+    padding: 16px 20px 0;
+    flex-shrink: 0;
+}
+.q-step {
+    font-size: 10px; font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.09em; text-transform: uppercase;
+    margin-bottom: 14px;
+}
+.q-body {
+    flex: 1; overflow-y: auto;
+    padding: 0 20px 22px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-sm) transparent;
+}
+.q-body::-webkit-scrollbar { width: 3px; }
+.q-body::-webkit-scrollbar-thumb { background: var(--border-sm); border-radius: 2px; }
+
+.q-text {
+    font-family: var(--font-display);
+    font-size: 19px; color: var(--text-primary);
+    line-height: 1.38; margin-bottom: 10px;
+}
+.q-why {
+    font-size: 12.5px; color: var(--text-muted);
+    line-height: 1.65;
+    padding: 9px 12px;
+    background: var(--bg-surface);
+    border-radius: var(--r-sm);
+    border-left: 2px solid var(--border-md);
+    margin-bottom: 18px;
+}
+.chips-label {
+    font-size: 10.5px; font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 8px;
+}
+.chips-list {
+    display: flex; flex-direction: column; gap: 6px;
+    margin-bottom: 14px;
+}
+.chip {
+    display: flex; align-items: center; gap: 9px;
+    padding: 10px 14px;
+    background: var(--bg-primary);
+    border: 1.5px solid var(--border-sm);
+    border-radius: var(--r-md);
+    font-size: 13px; color: var(--text-secondary);
+    cursor: pointer; text-align: left;
+    transition: all var(--ease-fast);
+}
+.chip:hover {
+    background: var(--bg-surface);
+    border-color: var(--border-md);
+    color: var(--text-primary);
+}
+.chip.selected {
+    background: var(--burgundy-light);
+    border-color: var(--burgundy);
+    color: var(--burgundy);
+}
+.chip-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border-md);
+    flex-shrink: 0;
+    transition: background var(--ease-fast);
+}
+.chip.selected .chip-dot { background: var(--burgundy); }
+
+.answer-ta {
+    width: 100%; min-height: 72px;
+    background: var(--bg-primary);
+    border: 1.5px solid var(--border-sm);
+    border-radius: var(--r-md);
+    padding: 10px 12px;
+    font-size: 13px; color: var(--text-primary);
+    resize: none; outline: none;
+    line-height: 1.55;
+    transition: border-color var(--ease-fast), box-shadow var(--ease-fast);
+    margin-bottom: 12px;
+}
+.answer-ta::placeholder { color: var(--text-muted); }
+.answer-ta:focus {
+    border-color: var(--blue-grey);
+    box-shadow: 0 0 0 3px var(--blue-grey-light);
+}
+
+.q-actions { display: flex; flex-direction: column; gap: 6px; }
+.btn-confirm {
+    width: 100%;
+    padding: 11px 16px;
+    background: var(--bg-ink); color: var(--text-inverse);
+    border: none; border-radius: var(--r-md);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: opacity var(--ease-fast);
+}
+.btn-confirm:hover { opacity: 0.84; }
+
+.q-sec-row { display: flex; gap: 6px; }
+.btn-sec {
+    flex: 1;
+    padding: 8px 8px;
+    background: transparent;
+    border: 1.5px solid var(--border-sm);
+    border-radius: var(--r-md);
+    font-size: 11.5px; color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--ease-fast);
+}
+.btn-sec:hover {
+    background: var(--bg-surface);
+    border-color: var(--border-md);
+    color: var(--text-secondary);
+}
+
+
+/* ============================================================
+   CALIBRATION BAR — bottom
+   ============================================================ */
+.calib-bar {
+    height: var(--bottombar-h);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-sm);
+    display: flex; align-items: center;
+    padding: 0 16px; gap: 5px;
+    flex-shrink: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.calib-bar::-webkit-scrollbar { display: none; }
+
+.calib-btn {
+    display: flex; align-items: center; gap: 5px;
+    padding: 7px 12px;
+    background: transparent;
+    border: 1.5px solid var(--border-sm);
+    border-radius: var(--r-full);
+    font-size: 12px; color: var(--text-secondary);
+    cursor: pointer; white-space: nowrap;
+    flex-shrink: 0;
+    transition: all var(--ease-fast);
+}
+.calib-btn:hover {
+    background: var(--bg-surface);
+    border-color: var(--border-md);
+    color: var(--text-primary);
+}
+.calib-btn.accent {
+    background: var(--burgundy-light);
+    border-color: var(--burgundy-mid);
+    color: var(--burgundy);
+}
+.calib-btn.accent:hover { background: var(--burgundy-mid); }
+.calib-btn.primary {
+    background: var(--bg-ink);
+    border-color: var(--bg-ink);
+    color: var(--text-inverse);
+}
+.calib-btn.primary:hover { opacity: 0.84; }
+
+.calib-sep {
+    width: 1px; height: 22px;
+    background: var(--border-sm);
+    flex-shrink: 0; margin: 0 2px;
+}
+
+.calib-icon { font-size: 11px; opacity: 0.65; line-height: 1; }
+
+
+/* ============================================================
+   FINAL PROMPT DRAWER
+   ============================================================ */
+.prompt-drawer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 72vh;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-sm);
+    border-radius: 20px 20px 0 0;
+    box-shadow: var(--shadow-xl);
+    transform: translateY(100%);
+    transition: transform var(--ease-slow);
+    z-index: 500;
+    display: flex; flex-direction: column;
+}
+.prompt-drawer.open { transform: translateY(0); }
+
+.drawer-handle {
+    width: 38px; height: 4px;
+    background: var(--border-md);
+    border-radius: 2px;
+    margin: 12px auto 0;
+    flex-shrink: 0;
+}
+.drawer-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 14px 24px 12px;
+    border-bottom: 1px solid var(--border-sm);
+    flex-shrink: 0;
+}
+.drawer-title {
+    font-family: var(--font-display);
+    font-size: 19px; color: var(--text-primary);
+}
+.drawer-sub {
+    font-size: 12px; color: var(--text-muted); margin-top: 2px;
+}
+.drawer-actions { display: flex; gap: 7px; align-items: center; }
+
+.btn-copy {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px;
+    background: var(--bg-ink); color: var(--text-inverse);
+    border: none; border-radius: var(--r-md);
+    font-size: 12px; font-weight: 500;
+    cursor: pointer;
+    transition: opacity var(--ease-fast);
+}
+.btn-copy:hover { opacity: 0.84; }
+
+.btn-close-drawer {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg-surface);
+    border: none; border-radius: var(--r-sm);
+    cursor: pointer; color: var(--text-muted);
+    transition: all var(--ease-fast);
+}
+.btn-close-drawer:hover { background: var(--border-sm); color: var(--text-primary); }
+
+.drawer-body {
+    flex: 1; overflow-y: auto;
+    padding: 24px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-sm) transparent;
+}
+.drawer-body::-webkit-scrollbar { width: 4px; }
+.drawer-body::-webkit-scrollbar-thumb { background: var(--border-sm); border-radius: 2px; }
+
+.prompt-output {
+    background: var(--bg-primary);
+    border: 1.5px solid var(--border-sm);
+    border-radius: var(--r-lg);
+    padding: 22px 26px;
+    font-size: 13.5px; color: var(--text-primary);
+    line-height: 1.85;
+    white-space: pre-wrap;
+}
+
+.drawer-footer {
+    padding: 12px 24px;
+    border-top: 1px solid var(--border-sm);
+    display: flex; gap: 8px;
+    flex-shrink: 0;
+}
+.btn-drawer-sec {
+    flex: 1; padding: 10px 12px;
+    background: transparent;
+    border: 1.5px solid var(--border-sm);
+    border-radius: var(--r-md);
+    font-size: 12.5px; color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--ease-fast);
+}
+.btn-drawer-sec:hover { background: var(--bg-surface); border-color: var(--border-md); color: var(--text-primary); }
+
+
+/* ============================================================
+   CALIBRATION MODAL (steer / custom direction)
+   ============================================================ */
+.calib-modal {
+    position: fixed;
+    bottom: calc(var(--bottombar-h) + 10px);
+    left: 50%; transform: translateX(-50%) translateY(16px);
+    width: min(480px, calc(100vw - 32px));
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-sm);
+    border-radius: var(--r-xl);
+    padding: 20px;
+    box-shadow: var(--shadow-xl);
+    z-index: 600;
+    opacity: 0; pointer-events: none;
+    transition: all var(--ease-med);
+}
+.calib-modal.open {
+    opacity: 1; pointer-events: all;
+    transform: translateX(-50%) translateY(0);
+}
+.calib-modal-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--text-primary); margin-bottom: 10px;
+}
+.calib-modal-ta {
+    width: 100%; min-height: 76px;
+    background: var(--bg-primary);
+    border: 1.5px solid var(--border-sm);
+    border-radius: var(--r-md);
+    padding: 10px 12px;
+    font-size: 13px; color: var(--text-primary);
+    resize: none; outline: none;
+    line-height: 1.55;
+    transition: border-color var(--ease-fast), box-shadow var(--ease-fast);
+    margin-bottom: 12px;
+}
+.calib-modal-ta:focus {
+    border-color: var(--blue-grey);
+    box-shadow: 0 0 0 3px var(--blue-grey-light);
+}
+.calib-modal-footer { display: flex; gap: 8px; justify-content: flex-end; }
+.btn-calib-cancel {
+    padding: 8px 14px;
+    background: transparent;
+    border: 1.5px solid var(--border-sm);
+    border-radius: var(--r-md);
+    font-size: 12px; color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--ease-fast);
+}
+.btn-calib-cancel:hover { background: var(--bg-surface); }
+.btn-calib-apply {
+    padding: 8px 16px;
+    background: var(--bg-ink); color: var(--text-inverse);
+    border: none; border-radius: var(--r-md);
+    font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: opacity var(--ease-fast);
+}
+.btn-calib-apply:hover { opacity: 0.84; }
+
+
+/* ============================================================
+   NODE TOOLTIP
+   ============================================================ */
+.node-tooltip {
+    position: fixed;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-sm);
+    border-radius: var(--r-lg);
+    padding: 14px 16px;
+    box-shadow: var(--shadow-lg);
+    max-width: 224px; min-width: 180px;
+    z-index: 700;
+    opacity: 0; pointer-events: none;
+    transition: opacity var(--ease-fast);
+}
+.node-tooltip.visible { opacity: 1; pointer-events: all; }
+.tt-cat {
+    font-size: 9.5px; font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.09em; text-transform: uppercase;
+    margin-bottom: 4px;
+}
+.tt-val {
+    font-size: 13px; font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.4; margin-bottom: 12px;
+}
+.tt-actions { display: flex; flex-direction: column; gap: 4px; }
+.tt-action {
+    padding: 6px 8px;
+    background: transparent;
+    border: 1px solid var(--border-sm);
+    border-radius: var(--r-sm);
+    font-size: 11.5px; color: var(--text-secondary);
+    cursor: pointer; text-align: left;
+    transition: all var(--ease-fast);
+}
+.tt-action:hover { background: var(--bg-surface); color: var(--text-primary); }
+
+
+/* ============================================================
+   OVERLAY
+   ============================================================ */
+.overlay {
+    position: fixed; inset: 0;
+    background: rgba(28,25,23,0.38);
+    backdrop-filter: blur(2px);
+    z-index: 450;
+    opacity: 0; pointer-events: none;
+    transition: opacity var(--ease-med);
+}
+.overlay.on { opacity: 1; pointer-events: all; }
+
+
+/* ============================================================
+   UTILITY
+   ============================================================ */
+.hidden { display: none !important; }
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeUp 260ms ease forwards; }
+
+@keyframes lineDraw {
+    from { stroke-dashoffset: 200; opacity: 0; }
+    to   { stroke-dashoffset: 0; opacity: 1; }
+}
+.line-new { animation: lineDraw 400ms ease forwards; }
+
+
+/* ============================================================
+   DESTINATION SELECT
+   ============================================================ */
+.dest-select-wrap {
+    padding: 22px 20px 24px;
+    flex: 1; overflow-y: auto;
+}
+.dest-idea-echo {
+    font-size: 12px; color: var(--text-muted);
+    font-style: italic; line-height: 1.5;
+    border-left: 2px solid var(--border-sm);
+    padding-left: 10px;
+    margin-bottom: 14px;
+}
+.dest-select-title {
+    font-family: var(--font-display);
+    font-size: 18px; color: var(--text-primary);
+    line-height: 1.3; margin-bottom: 5px;
+}
+.dest-select-sub {
+    font-size: 12.5px; color: var(--text-muted);
+    line-height: 1.6; margin-bottom: 16px;
+}
+.dest-select-sub strong { color: var(--text-secondary); font-weight: 600; }
+
+.dest-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    margin-bottom: 16px;
+}
+.dest-card {
+    display: flex; flex-direction: column; align-items: flex-start;
+    gap: 2px; padding: 11px 12px;
+    background: var(--bg-primary);
+    border: 1.5px solid var(--border-sm);
+    border-radius: var(--r-md);
+    cursor: pointer; text-align: left;
+    transition: all var(--ease-fast);
+}
+.dest-card:hover { background: var(--bg-surface); border-color: var(--border-md); }
+.dest-card.selected { background: var(--burgundy-light); border-color: var(--burgundy); }
+
+.dest-card-icon {
+    font-size: 13px; color: var(--text-muted);
+    margin-bottom: 2px; line-height: 1;
+}
+.dest-card.selected .dest-card-icon { color: var(--burgundy); opacity: 0.9; }
+
+.dest-card-name {
+    font-size: 12px; font-weight: 600;
+    color: var(--text-primary); line-height: 1.25;
+}
+.dest-card.selected .dest-card-name { color: var(--burgundy); }
+
+.dest-card-desc {
+    font-size: 10.5px; color: var(--text-muted); line-height: 1.35;
+}
+.dest-card.selected .dest-card-desc { color: var(--burgundy); opacity: 0.65; }
+
+.btn-confirm-dest {
+    width: 100%; padding: 11px 16px;
+    background: var(--bg-ink); color: var(--text-inverse);
+    border: none; border-radius: var(--r-md);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: opacity var(--ease-fast);
+}
+.btn-confirm-dest:hover { opacity: 0.84; }
+
+
+/* ============================================================
+   RESPONSIVE — MOBILE
+   ============================================================ */
+@media (max-width: 760px) {
+    :root {
+        --topbar-h: 52px;
+        --bottombar-h: 56px;
+        --arc-w: 0px;
+    }
+    .arc-panel { display: none; }
+
+    .q-panel {
+        width: 100%;
+        position: fixed;
+        bottom: var(--bottombar-h);
+        left: 0; right: 0; top: auto;
+        height: auto; max-height: 58vh;
+        border-left: none;
+        border-top: 1px solid var(--border-sm);
+        z-index: 50;
+    }
+    .canvas-wrap {
+        height: calc(100vh - var(--topbar-h) - 58vh - var(--bottombar-h));
+    }
+    .quality-row { display: none; }
+    .logo-name { font-size: 15px; }
+    .calib-btn { font-size: 11px; padding: 6px 10px; }
+    .calib-bar { padding: 0 10px; gap: 4px; }
+}
+
+    </style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+    <!-- ====================================================
+         TOP BAR
+    ==================================================== -->
+    <header class="top-bar">
+
+        <a class="logo" href="#">
+            <div class="logo-mark">
+                <!-- mind-map mark -->
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="8" cy="8" r="2.5" fill="white"/>
+                    <circle cx="2.5" cy="3.5" r="1.5" fill="white" opacity="0.55"/>
+                    <circle cx="13.5" cy="3.5" r="1.5" fill="white" opacity="0.55"/>
+                    <circle cx="2.5" cy="12.5" r="1.5" fill="white" opacity="0.55"/>
+                    <circle cx="13.5" cy="12.5" r="1.5" fill="white" opacity="0.55"/>
+                    <line x1="8" y1="8" x2="2.5" y2="3.5" stroke="white" stroke-width="0.9" opacity="0.35"/>
+                    <line x1="8" y1="8" x2="13.5" y2="3.5" stroke="white" stroke-width="0.9" opacity="0.35"/>
+                    <line x1="8" y1="8" x2="2.5" y2="12.5" stroke="white" stroke-width="0.9" opacity="0.35"/>
+                    <line x1="8" y1="8" x2="13.5" y2="12.5" stroke="white" stroke-width="0.9" opacity="0.35"/>
+                </svg>
+            </div>
+            <span class="logo-name">PromptMap</span>
+        </a>
+
+        <div class="top-bar-sep"></div>
+
+        <!-- Destination badge (hidden until session starts) -->
+        <div class="dest-badge hidden" id="destBadge" onclick="openChangeDestination()">
+            <div class="dest-badge-dot"></div>
+            <span class="dest-badge-text" id="destBadgeText">Build something</span>
+            <span class="dest-badge-change">· change</span>
+        </div>
+
+        <!-- Quality indicator -->
+        <div class="quality-row" id="qualityRow">
+            <span class="quality-label">Quality</span>
+            <div class="quality-pips" id="qualityPips">
+                <div class="quality-pip" id="qp0"></div>
+                <div class="quality-pip" id="qp1"></div>
+                <div class="quality-pip" id="qp2"></div>
+                <div class="quality-pip" id="qp3"></div>
+                <div class="quality-pip" id="qp4"></div>
+            </div>
+            <span class="quality-state" id="qualityState">Waiting…</span>
+        </div>
+
+        <button class="btn-gen" id="btnGenTop" onclick="generateFinalPrompt()">
+            <!-- spark icon -->
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                <path d="M6.5 1L7.9 5.1L12 6.5L7.9 7.9L6.5 12L5.1 7.9L1 6.5L5.1 5.1L6.5 1Z" fill="currentColor"/>
+            </svg>
+            Generate prompt
+        </button>
+
+    </header><!-- /top-bar -->
+
+
+    <!-- ====================================================
+         MAIN CONTENT
+    ==================================================== -->
+    <div class="main-content">
+
+        <!-- ARC PANEL -->
+        <aside class="arc-panel" id="arcPanel">
+            <div class="arc-header">
+                <span class="arc-title">Prompt Arc</span>
+                <button class="arc-toggle" onclick="toggleArcPanel()" title="Collapse arc panel">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M8 2L4 6L8 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="arc-body" id="arcBody">
+
+                <!-- Stage track — populated by JS -->
+                <div class="arc-stages" id="arcStages"></div>
+
+                <!-- Narrative — hidden until session starts -->
+                <div class="arc-section hidden" id="arcSecDir">
+                    <div class="arc-sec-label">Current direction</div>
+                    <div class="arc-sec-body strong" id="arcDir"></div>
+                </div>
+
+                <div class="arc-section hidden" id="arcSecClar">
+                    <div class="arc-sec-label">What's been clarified</div>
+                    <div class="arc-sec-body" id="arcClar"></div>
+                </div>
+
+                <div class="arc-section hidden" id="arcSecMiss">
+                    <div class="arc-sec-label">Still missing</div>
+                    <div class="arc-tags" id="arcMissTags"></div>
+                </div>
+
+                <div class="arc-section hidden" id="arcSecNext">
+                    <div class="arc-sec-label">Suggested next</div>
+                    <div class="arc-sec-body" id="arcNext"></div>
+                </div>
+
+                <p class="arc-empty-note" id="arcEmptyNote">
+                    Your prompt arc will appear here as you answer questions — narrating how your idea is taking shape.
+                </p>
+
+            </div>
+        </aside><!-- /arc-panel -->
+
+
+        <!-- CANVAS -->
+        <main class="canvas-wrap" id="canvasWrap">
+            <svg class="canvas-svg" id="canvasSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+            <div class="canvas-nodes" id="canvasNodes"></div>
+
+            <!-- Empty state -->
+            <div class="canvas-empty" id="canvasEmpty">
+                <div class="canvas-empty-title">Your thought map</div>
+                <div class="canvas-empty-sub">Enter your rough idea in the panel on the right to begin.</div>
+            </div>
+        </main><!-- /canvas -->
+
+
+        <!-- QUESTION PANEL -->
+        <aside class="q-panel" id="qPanel">
+
+            <!-- STATE A: Idea input -->
+            <div class="idea-wrap" id="ideaWrap">
+                <div class="idea-title">What's your rough idea?</div>
+                <div class="idea-sub">Anything — a product, a question, a creative direction, a strategy challenge, a thing you need written.</div>
+                <textarea
+                    class="idea-textarea"
+                    id="ideaTextarea"
+                    placeholder="e.g. I want to build an AI work coach…"
+                    rows="4"
+                ></textarea>
+                <div class="idea-chips">
+                    <button class="idea-chip" onclick="useExample(this)">AI work coach</button>
+                    <button class="idea-chip" onclick="useExample(this)">Luxury landing page</button>
+                    <button class="idea-chip" onclick="useExample(this)">Pitch deck</button>
+                    <button class="idea-chip" onclick="useExample(this)">Competitor analysis</button>
+                    <button class="idea-chip" onclick="useExample(this)">Brand strategy</button>
+                    <button class="idea-chip" onclick="useExample(this)">Essay about focus</button>
+                </div>
+                <button class="btn-start" onclick="startSession()">
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                        <path d="M6.5 1L7.9 5.1L12 6.5L7.9 7.9L6.5 12L5.1 7.9L1 6.5L5.1 5.1L6.5 1Z" fill="currentColor"/>
+                    </svg>
+                    Start mapping
+                </button>
+            </div>
+
+            <!-- STATE B: Destination select (hidden until idea submitted) -->
+            <div class="dest-select-wrap hidden" id="destWrap"></div>
+
+            <!-- STATE C: Active question (hidden until session starts) -->
+            <div class="q-header hidden" id="qHeader">
+                <div class="q-step" id="qStep">Question 1 of ~8</div>
+            </div>
+            <div class="q-body hidden" id="qBody">
+                <div class="q-text" id="qText"></div>
+                <div class="q-why" id="qWhy"></div>
+                <div class="chips-label">Suggested answers</div>
+                <div class="chips-list" id="chipsList"></div>
+                <textarea
+                    class="answer-ta"
+                    id="answerTa"
+                    placeholder="Or write your own answer…"
+                ></textarea>
+                <div class="q-actions">
+                    <button class="btn-confirm" onclick="handleAnswer()">Confirm answer →</button>
+                    <div class="q-sec-row">
+                        <button class="btn-sec" onclick="notSure()">Not sure</button>
+                        <button class="btn-sec" onclick="skipQuestion()">Skip</button>
+                        <button class="btn-sec" onclick="generateFinalPrompt()">Generate now</button>
+                    </div>
+                </div>
+            </div>
+
+        </aside><!-- /q-panel -->
+
+    </div><!-- /main-content -->
+
+
+    <!-- ====================================================
+         CALIBRATION BAR
+    ==================================================== -->
+    <nav class="calib-bar" id="calibBar">
+        <button class="calib-btn accent" onclick="openCalibModal('steer')">
+            <span class="calib-icon">↗</span> Steer differently
+        </button>
+        <button class="calib-btn" onclick="applyAction('deeper')">
+            <span class="calib-icon">↓</span> Go deeper
+        </button>
+        <button class="calib-btn" onclick="applyAction('zoom')">
+            <span class="calib-icon">⊙</span> Zoom out
+        </button>
+        <button class="calib-btn" onclick="applyAction('branch')">
+            <span class="calib-icon">⌥</span> Branch this
+        </button>
+        <div class="calib-sep"></div>
+        <button class="calib-btn" onclick="applyAction('challenge')">
+            <span class="calib-icon">?</span> Challenge assumptions
+        </button>
+        <button class="calib-btn" onclick="applyAction('missing')">
+            <span class="calib-icon">◎</span> Find missing angle
+        </button>
+        <button class="calib-btn" onclick="applyAction('sharper')">
+            <span class="calib-icon">◈</span> Make sharper
+        </button>
+        <div class="calib-sep"></div>
+        <button class="calib-btn" onclick="openChangeDestination()">
+            <span class="calib-icon">⊞</span> Change destination
+        </button>
+        <button class="calib-btn" onclick="openCalibModal('custom')">
+            <span class="calib-icon">✎</span> Add my direction
+        </button>
+        <div class="calib-sep"></div>
+        <button class="calib-btn primary" onclick="generateFinalPrompt()">
+            <span class="calib-icon">✦</span> Generate prompt
+        </button>
+    </nav>
+
+</div><!-- /app -->
+
+
+<!-- ====================================================
+     OVERLAY
+==================================================== -->
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
+
+
+<!-- ====================================================
+     NODE TOOLTIP
+==================================================== -->
+<div class="node-tooltip" id="nodeTooltip">
+    <div class="tt-cat" id="ttCat"></div>
+    <div class="tt-val" id="ttVal"></div>
+    <div class="tt-actions">
+        <button class="tt-action" onclick="editNodeTt()">✎  Edit this answer</button>
+        <button class="tt-action" onclick="branchNodeTt()">⌥  Branch deeper from here</button>
+        <button class="tt-action" onclick="generateFromNode()">✦  Generate prompt from here</button>
+    </div>
+</div>
+
+
+<!-- ====================================================
+     CALIBRATION MODAL
+==================================================== -->
+<div class="calib-modal" id="calibModal">
+    <div class="calib-modal-title" id="calibModalTitle">Steer the direction</div>
+    <textarea
+        class="calib-modal-ta"
+        id="calibModalTa"
+        placeholder="e.g. This is too functional — I want it more emotionally compelling and brand-led."
+    ></textarea>
+    <div class="calib-modal-footer">
+        <button class="btn-calib-cancel" onclick="closeCalibModal()">Cancel</button>
+        <button class="btn-calib-apply" onclick="applyCustomCalib()">Apply direction →</button>
+    </div>
+</div>
+
+
+<!-- ====================================================
+     FINAL PROMPT DRAWER
+==================================================== -->
+<div class="prompt-drawer" id="promptDrawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-header">
+        <div>
+            <div class="drawer-title">Your Claude prompt</div>
+            <div class="drawer-sub" id="drawerSub">Generated from your thought map</div>
+        </div>
+        <div class="drawer-actions">
+            <button class="btn-copy" id="btnCopy" onclick="copyPrompt()">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M2 8V2C2 1.44772 2.44772 1 3 1H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                Copy prompt
+            </button>
+            <button class="btn-close-drawer" onclick="closePromptDrawer()">
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                    <path d="M1.5 1.5L9.5 9.5M9.5 1.5L1.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+    <div class="drawer-body">
+        <div class="prompt-output" id="promptOutput"></div>
+    </div>
+    <div class="drawer-footer">
+        <button class="btn-drawer-sec" onclick="improvePrompt()">✦  Improve with one more question</button>
+        <button class="btn-drawer-sec" onclick="closePromptDrawer()">← Back to map</button>
+    </div>
+</div>
+
+
+<!-- ====================================================
+     JAVASCRIPT — Chunks 2+ (session engine)
+==================================================== -->
+<script>
+'use strict';
+
+/* ============================================================
+   CONSTANTS
+   ============================================================ */
+const STAGE_NAMES = [
+    'Seed idea', 'Destination', 'Audience', 'Outcome',
+    'Format', 'Tone / style', 'Constraints', 'Success criteria',
+    'Prompt-ready', 'Excellent prompt'
+];
+
+const QUALITY_LABELS = [
+    'Waiting…', 'Rough idea', 'Taking shape',
+    'Strong direction', 'Prompt-ready', 'Excellent prompt'
+];
+
+const DESTINATIONS = [
+    {
+        id: 'build', icon: '⬡',
+        label: 'Build something',
+        desc: 'Apps, tools, prototypes, websites, products',
+        keywords: ['build','create','make','develop','prototype','app','website','tool',
+                   'product','dashboard','landing','system','platform','interface','code',
+                   'implement','launch','startup','saas','plugin','widget','work coach','coach']
+    },
+    {
+        id: 'analyse', icon: '◎',
+        label: 'Analyse something',
+        desc: 'Audits, critiques, evaluations, reviews',
+        keywords: ['analyse','analyze','audit','review','critique','evaluate','assess',
+                   'examine','investigate','diagnose','benchmark','compare','gap analysis',
+                   'competitor analysis','analysis']
+    },
+    {
+        id: 'write', icon: '✦',
+        label: 'Write something',
+        desc: 'Copy, essays, scripts, emails, proposals',
+        keywords: ['write','draft','essay','article','blog','email','script','copy',
+                   'content','narrative','letter','proposal','lyrics','story','post',
+                   'newsletter','pitch deck','pitch','speech','poem']
+    },
+    {
+        id: 'design', icon: '◈',
+        label: 'Design something',
+        desc: 'Visual direction, UX, brand, interfaces',
+        keywords: ['design','visual','ui','ux','layout','aesthetic','look and feel',
+                   'identity','logo','typography','colour','color','luxury landing',
+                   'landing page design','brand identity']
+    },
+    {
+        id: 'research', icon: '◉',
+        label: 'Research something',
+        desc: 'Market scans, competitor intel, deep dives',
+        keywords: ['research','investigate','study','explore','understand','learn about',
+                   'find out','market research','competitor research','survey','scan']
+    },
+    {
+        id: 'strategise', icon: '⊞',
+        label: 'Strategise something',
+        desc: 'Strategy, positioning, decisions, planning',
+        keywords: ['strategy','strategise','strategize','plan','roadmap','positioning',
+                   'go-to-market','business plan','decision','framework','approach',
+                   'brand strategy','go to market']
+    }
+];
+
+const INGREDIENTS = [
+    'Audience', 'Outcome', 'Format', 'Tone',
+    'Context', 'Constraints', 'Success criteria'
+];
+
+
+/* ============================================================
+   SESSION STATE
+   ============================================================ */
+const session = {
+    seedIdea: '',
+    destination: null,       // destination id
+    questionIndex: 0,
+    answeredCount: 0,
+    calibrationCount: 0,
+    started: false,
+    awaitingDest: false
+};
+
+let nodes = [];              // { id, type, category, label, x, y, parentId }
+let _nodeId = 0;
+const nextId = () => 'n' + (++_nodeId);
+
+const answers = {
+    destination: null, audience: null, outcome: null,
+    format: null, tone: null, context: null,
+    constraints: null, successcriteria: null,
+    avoid: null, examples: null, calibrations: []
+};
+
+let activeNodeId  = null;
+let tooltipNodeId = null;
+
+const arc = {
+    stage: 0,
+    direction: '',
+    clarified: [],
+    missing: [...INGREDIENTS],
+    nextMove: ''
+};
+
+let qualityScore = 0;
+
+
+/* ============================================================
+   DESTINATION INFERENCE
+   ============================================================ */
+function inferDestinationType(idea) {
+    const text = idea.toLowerCase();
+    let best = 'build', bestScore = 0;
+    DESTINATIONS.forEach(d => {
+        const score = d.keywords.reduce((s, kw) => s + (text.includes(kw) ? 1 : 0), 0);
+        if (score > bestScore) { bestScore = score; best = d.id; }
+    });
+    return best;
+}
+
+
+/* ============================================================
+   START SESSION
+   ============================================================ */
+function startSession() {
+    const idea = document.getElementById('ideaTextarea').value.trim();
+    if (!idea) { document.getElementById('ideaTextarea').focus(); return; }
+
+    session.seedIdea  = idea;
+    session.started   = true;
+    session.awaitingDest = true;
+
+    // Central node
+    createNode({ type: 'central', category: 'Seed idea', label: idea, parentId: null, x: 0, y: 0 });
+
+    // Hide canvas empty state
+    document.getElementById('canvasEmpty').classList.add('hidden');
+    renderMindMap();
+
+    // Show destination select
+    showDestinationSelect(inferDestinationType(idea));
+
+    // Arc: stage 0 done, stage 1 current
+    arc.stage     = 1;
+    arc.direction = `Starting with: "${trunc(idea, 65)}" — choosing the right prompt destination.`;
+    arc.nextMove  = 'Select what kind of output you want Claude to produce.';
+    updateArc();
+    renderArcStages(1, 0);
+    setQuality(1);
+}
+
+
+/* ============================================================
+   DESTINATION SELECT UI
+   ============================================================ */
+function showDestinationSelect(inferredId) {
+    document.getElementById('ideaWrap').classList.add('hidden');
+
+    const wrap = document.getElementById('destWrap');
+    const dest = DESTINATIONS.find(d => d.id === inferredId) || DESTINATIONS[0];
+
+    wrap.innerHTML = `
+        <div class="dest-idea-echo">"${esc(trunc(session.seedIdea, 90))}"</div>
+        <div class="dest-select-title">What should Claude produce?</div>
+        <div class="dest-select-sub">We detected: <strong>${esc(dest.label)}</strong>. Confirm or pick a different destination.</div>
+        <div class="dest-grid" id="destGrid">
+            ${DESTINATIONS.map(d => `
+                <button class="dest-card${d.id === inferredId ? ' selected' : ''}"
+                        data-dest="${d.id}"
+                        onclick="selectDestCard(this,'${d.id}')">
+                    <span class="dest-card-icon">${d.icon}</span>
+                    <span class="dest-card-name">${esc(d.label)}</span>
+                    <span class="dest-card-desc">${esc(d.desc)}</span>
+                </button>`).join('')}
+        </div>
+        <button class="btn-confirm-dest" onclick="confirmDestination()">Confirm destination →</button>
+    `;
+
+    wrap.classList.remove('hidden');
+    wrap.classList.add('fade-in');
+    session.destination = inferredId;
+}
+
+function selectDestCard(el, destId) {
+    document.querySelectorAll('.dest-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    session.destination = destId;
+}
+
+function confirmDestination() {
+    if (!session.destination) return;
+    const dest = DESTINATIONS.find(d => d.id === session.destination);
+    answers.destination = dest.label;
+    session.awaitingDest = false;
+
+    // Hide dest select
+    document.getElementById('destWrap').classList.add('hidden');
+
+    // Show top-bar badge
+    document.getElementById('destBadgeText').textContent = dest.label;
+    document.getElementById('destBadge').classList.remove('hidden');
+
+    // Add destination node (sibling index 0 of 1 from central)
+    createNode({
+        type: 'dest', category: 'Destination', label: dest.label,
+        parentId: nodes[0].id, siblingIndex: 0, totalSiblings: 1
+    });
+    renderMindMap();
+
+    // Arc
+    arc.stage     = 2;
+    arc.direction = `Building a "${dest.label}" prompt — questions will focus on what Claude needs to produce something excellent.`;
+    arc.clarified = ['Destination: ' + dest.label];
+    arc.missing   = getMissingIngredients();
+    arc.nextMove  = 'Who is this for? Audience shapes tone, depth, and framing.';
+    updateArc();
+    renderArcStages(2, 1);
+    setQuality(2);
+
+    // Show first question (Chunk 3 replaces this stub)
+    showStubQuestion(0);
+}
+
+
+/* ============================================================
+   QUESTION DISPLAY — stub (Chunk 3 replaces with full engine)
+   ============================================================ */
+const STUB_QUESTIONS = [
+    {
+        text: 'Who is this for?',
+        why:  'Defining the audience shapes the tone, depth, and specificity of the final Claude prompt.',
+        chips: ['Senior professionals', 'Founders & entrepreneurs', 'Technical developers', 'Creative professionals', 'General consumers'],
+        category: 'Audience', answerKey: 'audience'
+    },
+    {
+        text: 'What should it help them do or decide?',
+        why:  'The outcome anchors the entire prompt — without it Claude optimises for the wrong goal.',
+        chips: ['Think through complex challenges', 'Make better decisions faster', 'Organise and prioritise work', 'Generate ideas and options', 'Reflect and improve performance'],
+        category: 'Outcome', answerKey: 'outcome'
+    },
+    {
+        text: 'What should the final output look like?',
+        why:  'Format instructions ensure Claude structures the output in a way that is immediately usable.',
+        chips: ['Working prototype / code', 'Structured written doc', 'Bullet-point summary', 'Step-by-step plan', 'Visual direction brief'],
+        category: 'Format', answerKey: 'format'
+    },
+    {
+        text: 'What tone or style should it have?',
+        why:  'Tone transforms a generic output into one that fits the brand, context, and audience expectations.',
+        chips: ['Premium and polished', 'Warm and conversational', 'Direct and concise', 'Bold and opinionated', 'Calm and considered'],
+        category: 'Tone', answerKey: 'tone'
+    },
+    {
+        text: 'What are the key constraints or things to avoid?',
+        why:  'Constraints prevent Claude from going in the wrong direction and save iteration cycles.',
+        chips: ['No generic filler', 'Keep it self-contained', 'Avoid technical jargon', 'No external dependencies', 'Avoid being overly formal'],
+        category: 'Constraints', answerKey: 'constraints'
+    },
+    {
+        text: 'What does a genuinely great output look like?',
+        why:  'Success criteria give Claude a target — without them the output will be average rather than excellent.',
+        chips: ['Immediately usable without edits', 'Feels like expert work', 'Specific and non-generic', 'Visually compelling', 'Solves the real problem'],
+        category: 'Success criteria', answerKey: 'successcriteria'
+    }
+];
+
+let _stubQIdx = 0;
+
+function showStubQuestion(idx) {
+    _stubQIdx = idx;
+    const q = STUB_QUESTIONS[idx] || STUB_QUESTIONS[STUB_QUESTIONS.length - 1];
+    document.getElementById('qHeader').classList.remove('hidden');
+    document.getElementById('qBody').classList.remove('hidden');
+    document.getElementById('qStep').textContent  = `Question ${idx + 1} of ${STUB_QUESTIONS.length}`;
+    document.getElementById('qText').textContent  = q.text;
+    document.getElementById('qWhy').textContent   = q.why;
+    document.getElementById('answerTa').value     = '';
+    document.getElementById('chipsList').innerHTML = q.chips.map(c =>
+        `<button class="chip" onclick="selectChip(this)"><span class="chip-dot"></span>${esc(c)}</button>`
+    ).join('');
+}
+
+function selectChip(el) {
+    document.querySelectorAll('#chipsList .chip').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    const label = el.textContent.trim();
+    document.getElementById('answerTa').value = label;
+}
+
+function handleAnswer() {
+    const val = document.getElementById('answerTa').value.trim();
+    if (!val) return;
+
+    const q = STUB_QUESTIONS[_stubQIdx];
+    if (q) answers[q.answerKey] = val;
+
+    session.answeredCount++;
+    session.questionIndex++;
+
+    // Determine parent for this answer node:
+    // attach to destination node (nodes[1]) if it exists, else central
+    const parentNode = nodes[1] || nodes[0];
+    const sibs = nodes.filter(n => n.parentId === parentNode.id);
+    createNode({
+        type: 'answer', category: q ? q.category : 'Answer', label: val,
+        parentId: parentNode.id,
+        siblingIndex: sibs.length, totalSiblings: sibs.length + 1
+    });
+    renderMindMap();
+
+    // Arc
+    const newScore = Math.min(5, Math.floor(session.answeredCount / 1.2) + 2);
+    arc.clarified = [...arc.clarified, `${q ? q.category : 'Answer'}: ${trunc(val, 30)}`];
+    arc.missing   = getMissingIngredients();
+    arc.stage     = Math.min(9, 2 + session.answeredCount);
+    arc.direction = buildArcDirection();
+    arc.nextMove  = _stubQIdx + 1 < STUB_QUESTIONS.length
+        ? `Next: ${STUB_QUESTIONS[_stubQIdx + 1].text}`
+        : 'You have enough to generate an excellent Claude prompt.';
+    updateArc();
+    renderArcStages(arc.stage, arc.stage - 1);
+    setQuality(newScore);
+
+    // Next question or prompt-ready
+    if (_stubQIdx + 1 < STUB_QUESTIONS.length) {
+        showStubQuestion(_stubQIdx + 1);
+    } else {
+        showPromptReady();
+    }
+}
+
+function notSure() {
+    const first = document.querySelector('#chipsList .chip');
+    if (first) { first.click(); }
+}
+
+function skipQuestion() {
+    session.questionIndex++;
+    if (_stubQIdx + 1 < STUB_QUESTIONS.length) showStubQuestion(_stubQIdx + 1);
+    else showPromptReady();
+}
+
+function showPromptReady() {
+    document.getElementById('qStep').textContent = 'Prompt ready';
+    document.getElementById('qText').textContent = 'You have answered enough questions. Generate your Claude prompt now, or keep refining.';
+    document.getElementById('qWhy').textContent  = '';
+    document.getElementById('chipsList').innerHTML = '';
+    arc.stage = 9; arc.nextMove = 'Click Generate prompt to create your expert-level Claude prompt.';
+    updateArc(); renderArcStages(9, 8); setQuality(5);
+}
+
+function improvePrompt() {
+    closePromptDrawer();
+}
+
+function buildArcDirection() {
+    const dest  = answers.destination || session.destination || 'prompt';
+    const aud   = answers.audience    ? ` for ${trunc(answers.audience, 30)}` : '';
+    const fmt   = answers.format      ? `. Output: ${trunc(answers.format, 25)}` : '';
+    return `Building a "${dest}" prompt${aud}${fmt}.`;
+}
+
+
+/* ============================================================
+   MISSING INGREDIENTS
+   ============================================================ */
+function getMissingIngredients() {
+    return INGREDIENTS.filter(label => {
+        const key = label.toLowerCase().replace(/\s/g, '');
+        return !answers[key];
+    });
+}
+
+
+/* ============================================================
+   NODE CREATION
+   ============================================================ */
+function createNode({ type, category, label, parentId, siblingIndex = 0, totalSiblings = 1, x, y }) {
+    const id  = nextId();
+    const pos = (x !== undefined && y !== undefined)
+        ? { x, y }
+        : calcNodePos(parentId, siblingIndex, totalSiblings);
+    const node = { id, type, category, label, parentId, x: pos.x, y: pos.y };
+    nodes.push(node);
+    return node;
+}
+
+
+/* ============================================================
+   NODE POSITION — offsets from canvas centre (px)
+   ============================================================ */
+function calcNodePos(parentId, siblingIndex, totalSiblings) {
+    if (!parentId) return { x: 0, y: 0 };
+
+    const parent = nodes.find(n => n.id === parentId);
+    if (!parent) return { x: 200, y: 0 };
+
+    const DIST = 210;
+
+    // First-level branches: radiate around centre
+    if (!parent.parentId) {
+        const slots     = Math.max(totalSiblings, 6);
+        const angleStep = (2 * Math.PI) / slots;
+        const angle     = -Math.PI / 2 + siblingIndex * angleStep; // start top
+        return {
+            x: parent.x + Math.cos(angle) * DIST,
+            y: parent.y + Math.sin(angle) * DIST
+        };
+    }
+
+    // Deeper levels: continue direction from grandparent → parent
+    const gp        = nodes.find(n => n.id === parent.parentId);
+    const base      = gp ? Math.atan2(parent.y - gp.y, parent.x - gp.x) : 0;
+    const spread    = Math.PI / 2.5;
+    const offset    = totalSiblings > 1
+        ? (siblingIndex / (totalSiblings - 1) - 0.5) * spread
+        : 0;
+    return {
+        x: parent.x + Math.cos(base + offset) * DIST,
+        y: parent.y + Math.sin(base + offset) * DIST
+    };
+}
+
+
+/* ============================================================
+   RENDER MIND MAP
+   ============================================================ */
+function renderMindMap() {
+    const container = document.getElementById('canvasNodes');
+    const svg       = document.getElementById('canvasSvg');
+    const canvas    = document.getElementById('canvasWrap');
+    const cx = canvas.offsetWidth  / 2;
+    const cy = canvas.offsetHeight / 2;
+
+    container.innerHTML = '';
+    svg.innerHTML       = '';
+
+    // Lines behind nodes
+    nodes.forEach(node => {
+        if (!node.parentId) return;
+        const par = nodes.find(n => n.id === node.parentId);
+        if (!par) return;
+
+        const x1 = cx + par.x,  y1 = cy + par.y;
+        const x2 = cx + node.x, y2 = cy + node.y;
+        const mx = (x1 + x2) / 2;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);
+        const cls = ['map-line', 'solid'];
+        if (node.type === 'dest')  cls.push('dest');
+        if (node.type === 'calib') cls.push('calib');
+        path.setAttribute('class', cls.join(' '));
+        svg.appendChild(path);
+    });
+
+    // Nodes
+    nodes.forEach(node => {
+        const ax = cx + node.x;
+        const ay = cy + node.y;
+
+        const el = document.createElement('div');
+        el.className   = `node node-${node.type === 'central' ? 'central' : node.type === 'dest' ? 'dest' : node.type === 'calib' ? 'calib' : 'answer'} node-new`;
+        el.dataset.nid = node.id;
+        el.style.left  = ax + 'px';
+        el.style.top   = ay + 'px';
+        el.onclick = (e) => { e.stopPropagation(); onNodeClick(ax, ay, node); };
+
+        if (node.type === 'central') {
+            el.innerHTML = `<div class="node-inner"><div class="n-sub">Your idea</div><div class="n-label">${esc(trunc(node.label, 65))}</div></div>`;
+        } else {
+            el.innerHTML = `<div class="node-inner"><div class="n-cat">${esc(node.category)}</div><div class="n-label">${esc(trunc(node.label, 42))}</div></div>`;
+        }
+
+        container.appendChild(el);
+    });
+}
+
+// Re-render on resize
+let _rzTimer;
+window.addEventListener('resize', () => {
+    clearTimeout(_rzTimer);
+    _rzTimer = setTimeout(() => { if (nodes.length) renderMindMap(); }, 120);
+});
+
+// Click on canvas background dismisses tooltip
+document.getElementById('canvasWrap').addEventListener('click', () => hideNodeTooltip());
+
+
+/* ============================================================
+   NODE TOOLTIP
+   ============================================================ */
+function onNodeClick(ax, ay, node) {
+    tooltipNodeId = node.id;
+    const tt  = document.getElementById('nodeTooltip');
+    document.getElementById('ttCat').textContent = node.category;
+    document.getElementById('ttVal').textContent = node.label;
+
+    // Smart positioning
+    const ttW = 224, ttH = 150;
+    const vw  = window.innerWidth, vh = window.innerHeight;
+    let left  = ax + 16, top = ay - 20;
+    if (left + ttW > vw - 16) left = ax - ttW - 16;
+    if (top  + ttH > vh - 80) top  = ay - ttH;
+
+    tt.style.left = left + 'px';
+    tt.style.top  = top  + 'px';
+    tt.classList.add('visible');
+}
+
+function hideNodeTooltip() {
+    document.getElementById('nodeTooltip').classList.remove('visible');
+    tooltipNodeId = null;
+}
+
+function editNodeTt()       { hideNodeTooltip(); /* Chunk 3 */ }
+function branchNodeTt()     { hideNodeTooltip(); /* Chunk 5 */ }
+function generateFromNode() { hideNodeTooltip(); generateFinalPrompt(); }
+
+
+/* ============================================================
+   ARC STAGE TRACK
+   ============================================================ */
+function renderArcStages(currentIdx = -1, doneUpTo = -1) {
+    const container = document.getElementById('arcStages');
+    container.innerHTML = '';
+    STAGE_NAMES.forEach((name, i) => {
+        const row   = document.createElement('div');
+        row.className = 'arc-stage-row';
+
+        const track = document.createElement('div');
+        track.className = 'arc-stage-track';
+
+        const dot = document.createElement('div');
+        dot.className = 'arc-dot'
+            + (i <= doneUpTo ? ' done' : i === currentIdx ? ' current' : '');
+        track.appendChild(dot);
+
+        if (i < STAGE_NAMES.length - 1) {
+            const conn = document.createElement('div');
+            conn.className = 'arc-connector' + (i < doneUpTo ? ' done' : '');
+            track.appendChild(conn);
+        }
+
+        const label = document.createElement('div');
+        label.className = 'arc-stage-text'
+            + (i <= doneUpTo ? ' done' : i === currentIdx ? ' current' : '');
+        label.textContent = name;
+
+        row.appendChild(track);
+        row.appendChild(label);
+        container.appendChild(row);
+    });
+}
+renderArcStages();
+
+
+/* ============================================================
+   ARC NARRATIVE UPDATE
+   ============================================================ */
+function updateArc() {
+    const hasContent = !!arc.direction;
+    document.getElementById('arcEmptyNote').classList.toggle('hidden', hasContent);
+
+    setEl('arcSecDir',  !!arc.direction);
+    setEl('arcSecClar', arc.clarified.length > 0);
+    setEl('arcSecMiss', arc.missing.length > 0);
+    setEl('arcSecNext', !!arc.nextMove);
+
+    if (arc.direction) document.getElementById('arcDir').textContent  = arc.direction;
+    if (arc.clarified.length) document.getElementById('arcClar').textContent = arc.clarified.join(' · ');
+    if (arc.missing.length) {
+        document.getElementById('arcMissTags').innerHTML =
+            arc.missing.map(m => `<span class="arc-tag missing">${esc(m)}</span>`).join('');
+    }
+    if (arc.nextMove) document.getElementById('arcNext').textContent = arc.nextMove;
+}
+
+function setEl(id, show) {
+    document.getElementById(id).classList.toggle('hidden', !show);
+}
+
+
+/* ============================================================
+   QUALITY METER
+   ============================================================ */
+function setQuality(score) {
+    qualityScore = Math.min(5, score);
+    document.querySelectorAll('.quality-pip').forEach((p, i) => {
+        p.classList.toggle('on', i < qualityScore);
+    });
+    document.getElementById('qualityState').textContent = QUALITY_LABELS[qualityScore];
+}
+setQuality(0);
+
+
+/* ============================================================
+   FINAL PROMPT GENERATION
+   ============================================================ */
+function generateFinalPrompt() {
+    const dest   = DESTINATIONS.find(d => d.id === session.destination) || DESTINATIONS[0];
+    const idea   = session.seedIdea || 'the described concept';
+    const aud    = answers.audience      || 'the intended audience';
+    const out    = answers.outcome       || 'a high-quality, immediately usable result';
+    const fmt    = answers.format        || 'structured, clearly labelled sections';
+    const tone   = answers.tone          || 'precise and professional';
+    const constr = answers.constraints   || 'avoid generic filler; be specific throughout';
+    const crit   = answers.successcriteria || 'feels like expert-level work; immediately actionable';
+
+    const roleMap = {
+        build:      'world-class product designer and full-stack engineer',
+        analyse:    'rigorous strategic analyst and critical thinker',
+        write:      'expert writer and content strategist',
+        design:     'senior visual designer and creative director',
+        research:   'research analyst and expert synthesiser',
+        strategise: 'experienced strategist and business thinker'
+    };
+
+    const taskMap = {
+        build:      `Build a complete, working prototype for: ${idea}. The output should be self-contained, visually polished, and immediately usable.`,
+        analyse:    `Perform a rigorous, honest analysis of: ${idea}. Be direct, evidence-based, and commercially grounded.`,
+        write:      `Write compelling, high-quality content for: ${idea}. Every sentence must earn its place — no filler.`,
+        design:     `Produce a clear, opinionated design direction for: ${idea}. Include specific visual language, layout principles, and decisions.`,
+        research:   `Research and synthesise the key findings on: ${idea}. Prioritise insight and relevance over comprehensiveness.`,
+        strategise: `Develop a clear, actionable strategy for: ${idea}. Be bold, specific, and commercially grounded.`
+    };
+
+    const prompt = `ROLE
+You are a ${roleMap[dest.id] || roleMap.build}.
+
+CONTEXT
+The brief is to ${dest.label.toLowerCase()}: ${idea}.
+This is for: ${aud}.
+
+TASK
+${taskMap[dest.id] || taskMap.build}
+
+OUTPUT FORMAT
+${fmt}
+
+TONE & STYLE
+${tone}
+
+CONSTRAINTS
+${constr}
+
+SUCCESS CRITERIA
+${crit}
+
+FINAL INSTRUCTION
+Do not produce generic, templated output. Everything you write should feel like it was created specifically for this brief by a genuine expert. Be concrete, be specific, and be immediately useful.`;
+
+    document.getElementById('promptOutput').textContent = prompt;
+    document.getElementById('drawerSub').textContent =
+        `${session.answeredCount + 1} inputs used · ${dest.label} · ${QUALITY_LABELS[qualityScore]}`;
+
+    document.getElementById('promptDrawer').classList.add('open');
+    showOverlay();
+}
+
+function closePromptDrawer() {
+    document.getElementById('promptDrawer').classList.remove('open');
+    hideOverlay();
+}
+
+async function copyPrompt() {
+    const text = document.getElementById('promptOutput').textContent;
+    try {
+        await navigator.clipboard.writeText(text);
+        const btn = document.getElementById('btnCopy');
+        btn.textContent = '✓  Copied!';
+        setTimeout(() => {
+            btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 8V2C2 1.44772 2.44772 1 3 1H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Copy prompt`;
+        }, 2200);
+    } catch (e) { console.warn('Copy failed', e); }
+}
+
+
+/* ============================================================
+   CALIBRATION
+   ============================================================ */
+let _calibType = 'steer';
+
+function openCalibModal(type) {
+    _calibType = type;
+    const title = document.getElementById('calibModalTitle');
+    const ta    = document.getElementById('calibModalTa');
+    title.textContent = type === 'steer' ? 'Steer the direction' : 'Add your own direction';
+    ta.placeholder = type === 'steer'
+        ? 'e.g. This is too functional — I want it more emotionally compelling and brand-led.'
+        : 'e.g. Focus on the onboarding experience before anything else.';
+    ta.value = '';
+    document.getElementById('calibModal').classList.add('open');
+    showOverlay();
+    setTimeout(() => ta.focus(), 80);
+}
+
+function closeCalibModal() {
+    document.getElementById('calibModal').classList.remove('open');
+    hideOverlay();
+}
+
+function applyCustomCalib() {
+    const text = document.getElementById('calibModalTa').value.trim();
+    if (!text) return;
+    answers.calibrations.push({ type: _calibType, text });
+    session.calibrationCount++;
+    closeCalibModal();
+    // Chunk 5 adds calibration node + next question shift
+    console.log('Calibration queued for Chunk 5:', _calibType, text);
+}
+
+function applyAction(type) {
+    // Chunk 5
+    if (!session.started) return;
+    console.log('Action:', type);
+}
+
+function openChangeDestination() {
+    if (!session.started) return;
+    document.getElementById('qHeader').classList.add('hidden');
+    document.getElementById('qBody').classList.add('hidden');
+    showDestinationSelect(session.destination || 'build');
+}
+
+
+/* ============================================================
+   ARC PANEL TOGGLE
+   ============================================================ */
+let arcCollapsed = false;
+function toggleArcPanel() {
+    arcCollapsed = !arcCollapsed;
+    document.getElementById('arcPanel').classList.toggle('collapsed', arcCollapsed);
+}
+
+
+/* ============================================================
+   EXAMPLE CHIPS
+   ============================================================ */
+function useExample(el) {
+    document.getElementById('ideaTextarea').value = el.textContent;
+    document.getElementById('ideaTextarea').focus();
+}
+
+
+/* ============================================================
+   OVERLAY
+   ============================================================ */
+function showOverlay() { document.getElementById('overlay').classList.add('on'); }
+function hideOverlay()  { document.getElementById('overlay').classList.remove('on'); }
+
+function closeAll() {
+    closeCalibModal();
+    closePromptDrawer();
+    hideNodeTooltip();
+}
+
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+function trunc(str, len) {
+    return str && str.length > len ? str.slice(0, len).trimEnd() + '…' : (str || '');
+}
+
+function esc(str) {
+    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+</script>
+</body>
+</html>
