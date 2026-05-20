@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PromptMap — Turn rough ideas into brilliant Claude prompts</title>
+    <title>PromptMap — Explore and structure any idea with AI</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
     <style>
@@ -12,69 +12,58 @@
    CSS VARIABLES — Design system
    ============================================================ */
 :root {
-    /* Backgrounds */
     --bg-primary:   #F7F4EF;
     --bg-secondary: #FFFFFF;
     --bg-surface:   #EFEBE5;
     --bg-ink:       #1C1917;
 
-    /* Text */
     --text-primary:   #1C1917;
     --text-secondary: #57534E;
     --text-muted:     #A8A29E;
     --text-inverse:   #FAF9F7;
 
-    /* Accents */
     --burgundy:       #7C3A52;
     --burgundy-light: #F3E8ED;
     --burgundy-mid:   #E8C9D3;
-    --blush:          #E4CFC6;
     --blue-grey:      #6B8B9E;
     --blue-grey-light:#E6EFF5;
     --amber:          #B5763A;
     --amber-light:    #F6EDD8;
     --amber-mid:      #E5C07B;
+    --sage:           #5A7A65;
+    --sage-light:     #E4EDE6;
+    --sage-mid:       #B8D0BE;
 
-    /* Borders */
     --border-xs:  #F0EDE8;
     --border-sm:  #E7E3DD;
     --border-md:  #D4CFC8;
     --border-lg:  #A8A29E;
 
-    /* Shadows */
     --shadow-xs: 0 1px 2px rgba(28,25,23,0.05);
     --shadow-sm: 0 2px 6px rgba(28,25,23,0.07);
     --shadow-md: 0 4px 16px rgba(28,25,23,0.09);
     --shadow-lg: 0 8px 32px rgba(28,25,23,0.12);
     --shadow-xl: 0 16px 48px rgba(28,25,23,0.16);
 
-    /* Radii */
     --r-sm:   8px;
     --r-md:   12px;
     --r-lg:   16px;
     --r-xl:   24px;
     --r-full: 9999px;
 
-    /* Typography */
     --font-display: 'DM Serif Display', Georgia, serif;
     --font-body:    'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 
-    /* Layout */
     --topbar-h:    60px;
     --bottombar-h: 64px;
-    --arc-w:       272px;
-    --q-w:         356px;
+    --arc-w:       256px;
+    --q-w:         360px;
 
-    /* Motion */
     --ease-fast: 140ms ease;
     --ease-med:  240ms ease;
     --ease-slow: 380ms cubic-bezier(0.4,0,0.2,1);
 }
 
-
-/* ============================================================
-   RESET
-   ============================================================ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overflow: hidden; }
 body {
@@ -87,17 +76,10 @@ body {
 button { font-family: var(--font-body); }
 textarea, input { font-family: var(--font-body); }
 
-
 /* ============================================================
    APP SHELL
    ============================================================ */
-.app {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-}
-
+.app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
 /* ============================================================
    TOP BAR
@@ -106,1050 +88,488 @@ textarea, input { font-family: var(--font-body); }
     height: var(--topbar-h);
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-sm);
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    gap: 14px;
-    flex-shrink: 0;
-    z-index: 100;
+    display: flex; align-items: center;
+    padding: 0 20px; gap: 14px;
+    flex-shrink: 0; z-index: 100;
 }
-
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    flex-shrink: 0;
-}
+.logo { display: flex; align-items: center; gap: 8px; text-decoration: none; flex-shrink: 0; }
 .logo-mark {
-    width: 28px; height: 28px;
-    background: var(--bg-ink);
-    border-radius: 7px;
-    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; background: var(--bg-ink);
+    border-radius: 7px; display: flex; align-items: center; justify-content: center;
 }
-.logo-name {
-    font-family: var(--font-display);
-    font-size: 17px;
-    color: var(--text-primary);
-    letter-spacing: -0.01em;
-}
+.logo-name { font-family: var(--font-display); font-size: 17px; color: var(--text-primary); letter-spacing: -0.01em; }
+.top-bar-sep { width: 1px; height: 20px; background: var(--border-sm); flex-shrink: 0; }
 
-.top-bar-sep {
-    width: 1px; height: 20px;
-    background: var(--border-sm);
-    flex-shrink: 0;
-}
+.coverage-row { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.coverage-label { font-size: 11px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.coverage-pips { display: flex; gap: 3px; }
+.coverage-pip { width: 22px; height: 4px; border-radius: var(--r-full); background: var(--border-sm); transition: background var(--ease-med); }
+.coverage-pip.on { background: var(--bg-ink); }
+.coverage-state { font-size: 12px; font-weight: 500; color: var(--text-secondary); white-space: nowrap; }
 
-/* Destination badge */
-.dest-badge {
-    display: flex; align-items: center; gap: 6px;
-    padding: 5px 11px;
-    background: var(--burgundy-light);
-    border: 1px solid var(--burgundy-mid);
-    border-radius: var(--r-full);
-    cursor: pointer;
-    transition: background var(--ease-fast);
-    flex-shrink: 0;
-}
-.dest-badge:hover { background: var(--burgundy-mid); }
-.dest-badge-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--burgundy);
-}
-.dest-badge-text {
-    font-size: 12px; font-weight: 500;
-    color: var(--burgundy);
-    letter-spacing: 0.01em;
-}
-.dest-badge-change {
-    font-size: 11px;
-    color: var(--burgundy);
-    opacity: 0.55;
-}
-
-/* Quality indicator */
-.quality-row {
-    display: flex; align-items: center; gap: 8px;
-    margin-left: auto;
-}
-.quality-label {
-    font-size: 11px; font-weight: 500;
-    color: var(--text-muted);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-.quality-pips {
-    display: flex; gap: 3px;
-}
-.quality-pip {
-    width: 22px; height: 4px;
-    border-radius: var(--r-full);
-    background: var(--border-sm);
-    transition: background var(--ease-med);
-}
-.quality-pip.on  { background: var(--bg-ink); }
-.quality-pip.half { background: var(--blush); }
-
-.quality-state {
-    font-size: 12px; font-weight: 500;
-    color: var(--text-secondary);
-    white-space: nowrap;
-}
-
-/* Generate button */
-.btn-gen {
+.btn-export {
     display: flex; align-items: center; gap: 7px;
-    padding: 8px 16px;
-    background: var(--bg-ink);
-    color: var(--text-inverse);
+    padding: 8px 16px; background: var(--bg-ink); color: var(--text-inverse);
     border: none; border-radius: var(--r-md);
-    font-size: 13px; font-weight: 500;
-    cursor: pointer;
+    font-size: 13px; font-weight: 500; cursor: pointer;
     transition: opacity var(--ease-fast), transform var(--ease-fast);
-    white-space: nowrap;
-    flex-shrink: 0;
+    white-space: nowrap; flex-shrink: 0;
 }
-.btn-gen:hover  { opacity: 0.84; }
-.btn-gen:active { transform: scale(0.97); }
+.btn-export:hover { opacity: 0.84; }
+.btn-export:active { transform: scale(0.97); }
 
+.btn-reset {
+    font-size: 11px; font-weight: 500; color: var(--text-muted);
+    background: none; border: none; cursor: pointer;
+    padding: 4px 8px; border-radius: 5px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s, background 0.15s, color 0.15s; white-space: nowrap;
+}
+.btn-reset.visible { opacity: 1; pointer-events: all; }
+.btn-reset:hover { background: var(--bg-surface); color: var(--text-secondary); }
 
 /* ============================================================
    MAIN CONTENT
    ============================================================ */
-.main-content {
-    flex: 1;
-    display: flex;
-    overflow: hidden;
-    min-height: 0;
-}
-
+.main-content { flex: 1; display: flex; overflow: hidden; min-height: 0; }
 
 /* ============================================================
-   ARC PANEL — left
+   LEFT PANEL — Structure / Coverage
    ============================================================ */
 .arc-panel {
-    width: var(--arc-w);
-    flex-shrink: 0;
-    background: var(--bg-secondary);
-    border-right: 1px solid var(--border-sm);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    width: var(--arc-w); flex-shrink: 0;
+    background: var(--bg-secondary); border-right: 1px solid var(--border-sm);
+    display: flex; flex-direction: column; overflow: hidden;
     transition: width var(--ease-slow), border-color var(--ease-slow);
 }
-.arc-panel.collapsed {
-    width: 0;
-    border-right-color: transparent;
-}
+.arc-panel.collapsed { width: 0; border-right-color: transparent; }
 
 .arc-header {
-    padding: 15px 18px 12px;
-    border-bottom: 1px solid var(--border-sm);
-    display: flex; align-items: center; justify-content: space-between;
-    flex-shrink: 0;
+    padding: 15px 18px 12px; border-bottom: 1px solid var(--border-sm);
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
 }
-.arc-title {
-    font-size: 10.5px; font-weight: 600;
-    color: var(--text-muted);
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-}
+.arc-title { font-size: 10.5px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.09em; text-transform: uppercase; }
 .arc-toggle {
-    width: 24px; height: 24px;
-    display: flex; align-items: center; justify-content: center;
-    background: none; border: none; cursor: pointer;
-    border-radius: var(--r-sm);
-    color: var(--text-muted);
+    width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+    background: none; border: none; cursor: pointer; border-radius: var(--r-sm); color: var(--text-muted);
     transition: background var(--ease-fast), color var(--ease-fast);
 }
 .arc-toggle:hover { background: var(--bg-surface); color: var(--text-primary); }
 
 .arc-body {
-    flex: 1; overflow-y: auto;
-    padding: 18px 18px 24px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-sm) transparent;
+    flex: 1; overflow-y: auto; padding: 18px 18px 24px;
+    scrollbar-width: thin; scrollbar-color: var(--border-sm) transparent;
 }
 .arc-body::-webkit-scrollbar { width: 3px; }
 .arc-body::-webkit-scrollbar-thumb { background: var(--border-sm); border-radius: 2px; }
 
-/* Stage track */
-.arc-stages { margin-bottom: 22px; }
-.arc-stage-row {
-    display: flex; align-items: flex-start; gap: 10px;
-}
-.arc-stage-track {
-    display: flex; flex-direction: column; align-items: center;
-    flex-shrink: 0;
-}
-.arc-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    border: 1.5px solid var(--border-md);
-    background: var(--bg-primary);
-    margin-top: 3px;
-    flex-shrink: 0;
-    transition: all var(--ease-med);
-}
-.arc-dot.done    { background: var(--bg-ink); border-color: var(--bg-ink); }
-.arc-dot.current { background: var(--burgundy); border-color: var(--burgundy); box-shadow: 0 0 0 3px var(--burgundy-light); }
+.arc-sec-label { font-size: 10px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+.arc-section { margin-bottom: 22px; }
+.arc-sec-body { font-size: 12.5px; color: var(--text-secondary); line-height: 1.65; }
+.arc-sec-body.strong { color: var(--text-primary); font-size: 13px; font-weight: 500; }
+.arc-empty-note { font-size: 12px; color: var(--text-muted); line-height: 1.7; }
 
-.arc-connector {
-    width: 1px; height: 18px;
-    background: var(--border-sm);
-    margin: 2px 0;
-    transition: background var(--ease-med);
+/* Coverage dims */
+.cov-dim {
+    display: flex; align-items: center; gap: 9px;
+    padding: 6px 0; border-bottom: 1px solid var(--border-xs);
+    cursor: pointer;
 }
-.arc-connector.done { background: var(--bg-ink); }
+.cov-dim:last-child { border-bottom: none; }
+.cov-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border-sm); border: 1.5px solid var(--border-md);
+    flex-shrink: 0; transition: all var(--ease-med);
+}
+.cov-dim.covered .cov-dot { background: var(--bg-ink); border-color: var(--bg-ink); }
+.cov-label { font-size: 12px; color: var(--text-muted); transition: color var(--ease-fast); }
+.cov-dim.covered .cov-label { color: var(--text-secondary); font-weight: 500; }
+.cov-dim:hover .cov-label { color: var(--text-primary); }
 
-.arc-stage-text {
-    font-size: 11.5px; color: var(--text-muted);
-    padding-bottom: 18px; line-height: 1.3;
-    transition: color var(--ease-med);
-    padding-top: 1px;
+/* Arc mini */
+.arc-mini {
+    position: absolute; top: 12px; left: 12px;
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 10px; background: var(--bg-secondary);
+    border: 1px solid var(--border-sm); border-radius: var(--r-full);
+    box-shadow: var(--shadow-sm); cursor: pointer;
+    font-size: 11px; color: var(--text-muted);
+    opacity: 0; pointer-events: none;
+    transition: opacity var(--ease-med); z-index: 10;
 }
-.arc-stage-text.done    { color: var(--text-secondary); }
-.arc-stage-text.current { color: var(--text-primary); font-weight: 500; }
-
-/* Narrative sections */
-.arc-section { margin-bottom: 18px; }
-.arc-sec-label {
-    font-size: 10px; font-weight: 600;
-    color: var(--text-muted);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 5px;
-}
-.arc-sec-body {
-    font-size: 12.5px; color: var(--text-secondary);
-    line-height: 1.65;
-}
-.arc-sec-body.strong { color: var(--text-primary); font-size: 13px; }
-
-.arc-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
-.arc-tag {
-    padding: 3px 8px;
-    border-radius: var(--r-full);
-    font-size: 11px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-sm);
-    color: var(--text-muted);
-}
-.arc-tag.missing {
-    background: var(--amber-light);
-    border-color: var(--amber-mid);
-    color: var(--amber);
-}
-
-.arc-empty-note {
-    font-size: 12px; color: var(--text-muted);
-    line-height: 1.7;
-    padding-top: 4px;
-}
-
+.arc-mini.visible { opacity: 1; pointer-events: all; }
+.arc-mini-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--bg-ink); }
 
 /* ============================================================
    CANVAS
    ============================================================ */
 .canvas-wrap {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
+    flex: 1; position: relative; overflow: hidden;
     background: var(--bg-primary);
-    /* dot grid */
     background-image: radial-gradient(circle, var(--border-sm) 1px, transparent 1px);
-    background-size: 26px 26px;
+    background-size: 26px 26px; cursor: grab;
 }
-
-.canvas-svg {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-    overflow: visible;
-}
-
-.canvas-nodes {
-    position: absolute; inset: 0;
-}
+.canvas-wrap.panning { cursor: grabbing; }
+.canvas-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.canvas-nodes { position: absolute; inset: 0; }
 
 /* Nodes */
 .node {
-    position: absolute;
-    transform: translate(-50%, -50%);
-    cursor: pointer;
-    transition: transform var(--ease-fast);
-    user-select: none;
+    position: absolute; transform: translate(-50%, -50%);
+    cursor: pointer; transition: transform var(--ease-fast); user-select: none;
 }
 .node:hover { transform: translate(-50%, -50%) scale(1.04); }
 .node:active { transform: translate(-50%, -50%) scale(0.97); }
 
 .node-inner {
-    border-radius: var(--r-xl);
-    padding: 13px 20px;
-    max-width: 190px;
-    text-align: center;
-    box-shadow: var(--shadow-md);
-    transition: box-shadow var(--ease-fast);
+    border-radius: var(--r-xl); padding: 12px 18px; max-width: 185px;
+    text-align: center; box-shadow: var(--shadow-md);
+    transition: box-shadow var(--ease-fast), border-color var(--ease-fast);
 }
 .node:hover .node-inner { box-shadow: var(--shadow-lg); }
 
-/* Central */
-.node-central .node-inner {
-    background: var(--bg-ink);
-    color: var(--text-inverse);
-    padding: 16px 24px;
-    max-width: 210px;
-}
-.node-central .n-label {
-    font-family: var(--font-display);
-    font-size: 15px; line-height: 1.35;
-}
-.node-central .n-sub {
-    font-size: 10px; opacity: 0.45;
-    margin-top: 3px;
-    text-transform: uppercase; letter-spacing: 0.07em;
-}
+.node-central .node-inner { background: var(--bg-ink); color: var(--text-inverse); padding: 16px 22px; max-width: 210px; }
+.node-central .n-label { font-family: var(--font-display); font-size: 15px; line-height: 1.35; }
+.node-central .n-sub { font-size: 10px; opacity: 0.45; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.07em; }
 
-/* Answer */
-.node-answer .node-inner {
-    background: var(--bg-secondary);
-    border: 1.5px solid var(--border-sm);
-}
-.node-answer .n-cat {
-    font-size: 9px; font-weight: 600;
-    color: var(--text-muted);
-    letter-spacing: 0.09em; text-transform: uppercase;
-    margin-bottom: 3px;
-}
-.node-answer .n-label {
-    font-size: 12.5px; font-weight: 500;
-    color: var(--text-primary);
-    line-height: 1.35;
-}
+.node-answer .node-inner { background: var(--bg-secondary); border: 1.5px solid var(--border-sm); }
+.node-answer .n-cat { font-size: 9px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 3px; }
+.node-answer .n-label { font-size: 12.5px; font-weight: 500; color: var(--text-primary); line-height: 1.35; }
 .node-answer:hover .node-inner { border-color: var(--border-md); }
 
-/* Destination */
-.node-dest .node-inner {
-    background: var(--burgundy-light);
-    border: 1.5px solid var(--burgundy-mid);
-}
-.node-dest .n-cat  { color: var(--burgundy); opacity: 0.7; }
-.node-dest .n-label { color: var(--burgundy); }
+.node-active .node-inner { box-shadow: 0 0 0 3px var(--blue-grey-light), var(--shadow-md) !important; border-color: var(--blue-grey) !important; }
 
-/* Calibration */
-.node-calib .node-inner {
-    background: var(--amber-light);
-    border: 1.5px solid var(--amber-mid);
-}
-.node-calib .n-cat  { color: var(--amber); opacity: 0.8; }
-.node-calib .n-label { color: var(--amber); }
+/* Dimension-coloured nodes */
+.node-dim-problem .node-inner      { background: var(--burgundy-light); border-color: var(--burgundy-mid); }
+.node-dim-problem .n-cat           { color: var(--burgundy); }
+.node-dim-problem .n-label         { color: var(--burgundy); }
+.node-dim-user .node-inner         { background: var(--blue-grey-light); border-color: var(--blue-grey); }
+.node-dim-user .n-cat              { color: var(--blue-grey); }
+.node-dim-user .n-label            { color: #3d6375; }
+.node-dim-bizmodel .node-inner     { background: var(--amber-light); border-color: var(--amber-mid); }
+.node-dim-bizmodel .n-cat          { color: var(--amber); }
+.node-dim-bizmodel .n-label        { color: #7a4e1a; }
+.node-dim-distribution .node-inner { background: var(--sage-light); border-color: var(--sage-mid); }
+.node-dim-distribution .n-cat      { color: var(--sage); }
+.node-dim-distribution .n-label    { color: var(--sage); }
+.node-dim-moat .node-inner         { background: #f0edf8; border-color: #c9bfe8; }
+.node-dim-moat .n-cat              { color: #6b5a9e; }
+.node-dim-moat .n-label            { color: #4a3d7a; }
+.node-dim-risk .node-inner         { background: #fdf0ee; border-color: #f0c4bc; }
+.node-dim-risk .n-cat              { color: #c05a48; }
+.node-dim-risk .n-label            { color: #a0402f; }
+.node-dim-unexpected .node-inner   { background: #eef4f0; border-color: #b8d4be; }
+.node-dim-unexpected .n-cat        { color: var(--sage); }
+.node-dim-unexpected .n-label      { color: var(--sage); }
 
-/* Active / focused */
-.node-active .node-inner {
-    box-shadow: 0 0 0 3px var(--blue-grey-light), var(--shadow-md);
-    border-color: var(--blue-grey) !important;
-}
+/* Lines */
+.map-line { fill: none; stroke: var(--border-md); stroke-width: 1.5; stroke-dasharray: 5 4; stroke-linecap: round; }
+.map-line.solid { stroke-dasharray: none; }
+.map-line.dim-problem      { stroke: var(--burgundy-mid); }
+.map-line.dim-user         { stroke: var(--blue-grey); opacity: 0.5; }
+.map-line.dim-bizmodel     { stroke: var(--amber-mid); }
+.map-line.dim-distribution { stroke: var(--sage-mid); }
+.map-line.dim-moat         { stroke: #c9bfe8; }
+.map-line.dim-risk         { stroke: #f0c4bc; }
+.map-line.dim-unexpected   { stroke: var(--sage-mid); opacity: 0.6; }
 
-/* Canvas empty state */
-.canvas-empty {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center; pointer-events: none;
-}
-.canvas-empty-title {
-    font-family: var(--font-display);
-    font-size: 26px; color: var(--text-primary);
-    margin-bottom: 8px;
-}
-.canvas-empty-sub {
-    font-size: 14px; color: var(--text-muted);
-    max-width: 280px; line-height: 1.6;
-}
-
-/* SVG lines */
-.map-line {
-    fill: none;
-    stroke: var(--border-md);
-    stroke-width: 1.5;
-    stroke-dasharray: 5 4;
-    stroke-linecap: round;
-}
-.map-line.solid     { stroke-dasharray: none; }
-.map-line.calib     { stroke: var(--amber-mid); }
-.map-line.dest      { stroke: var(--burgundy-mid); }
-
-/* Node appear animation */
 @keyframes nodeIn {
-    from { opacity: 0; transform: translate(-50%,-50%) scale(0.75); }
-    to   { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+    from { opacity:0; transform:translate(-50%,-50%) scale(0.72); }
+    to   { opacity:1; transform:translate(-50%,-50%) scale(1); }
 }
-.node-new { animation: nodeIn 320ms cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.node-new { animation: nodeIn 300ms cubic-bezier(0.34,1.56,0.64,1) forwards; }
 
+.canvas-empty { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; pointer-events: none; }
+.canvas-empty-title { font-family: var(--font-display); font-size: 26px; color: var(--text-primary); margin-bottom: 8px; }
+.canvas-empty-sub { font-size: 14px; color: var(--text-muted); max-width: 280px; line-height: 1.6; }
 
 /* ============================================================
-   QUESTION PANEL — right
+   RIGHT PANEL — Explore
    ============================================================ */
 .q-panel {
-    width: var(--q-w);
-    flex-shrink: 0;
-    background: var(--bg-secondary);
-    border-left: 1px solid var(--border-sm);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    width: var(--q-w); flex-shrink: 0;
+    background: var(--bg-secondary); border-left: 1px solid var(--border-sm);
+    display: flex; flex-direction: column; overflow: hidden;
 }
 
-/* Idea input state */
-.idea-wrap {
-    padding: 28px 22px 22px;
-    flex: 1; overflow-y: auto;
-}
-.idea-title {
-    font-family: var(--font-display);
-    font-size: 22px; color: var(--text-primary);
-    line-height: 1.3; margin-bottom: 6px;
-}
-.idea-sub {
-    font-size: 13px; color: var(--text-muted);
-    line-height: 1.6; margin-bottom: 18px;
-}
+.idea-wrap { padding: 28px 22px 22px; flex: 1; overflow-y: auto; }
+.idea-title { font-family: var(--font-display); font-size: 22px; color: var(--text-primary); line-height: 1.3; margin-bottom: 6px; }
+.idea-sub { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 18px; }
 .idea-textarea {
     width: 100%; min-height: 104px;
-    background: var(--bg-primary);
-    border: 1.5px solid var(--border-sm);
-    border-radius: var(--r-md);
-    padding: 12px 14px;
+    background: var(--bg-primary); border: 1.5px solid var(--border-sm);
+    border-radius: var(--r-md); padding: 12px 14px;
     font-size: 14px; color: var(--text-primary);
-    resize: none; outline: none;
-    line-height: 1.6;
+    resize: none; outline: none; line-height: 1.6;
     transition: border-color var(--ease-fast), box-shadow var(--ease-fast);
 }
 .idea-textarea::placeholder { color: var(--text-muted); }
-.idea-textarea:focus {
-    border-color: var(--blue-grey);
-    box-shadow: 0 0 0 3px var(--blue-grey-light);
-}
-.idea-chips {
-    display: flex; flex-wrap: wrap; gap: 5px;
-    margin-top: 10px;
-}
+.idea-textarea:focus { border-color: var(--blue-grey); box-shadow: 0 0 0 3px var(--blue-grey-light); }
+.idea-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
 .idea-chip {
-    padding: 4px 10px;
-    background: transparent;
-    border: 1px solid var(--border-sm);
-    border-radius: var(--r-full);
-    font-size: 11.5px; color: var(--text-muted);
-    cursor: pointer;
+    padding: 4px 10px; background: transparent;
+    border: 1px solid var(--border-sm); border-radius: var(--r-full);
+    font-size: 11.5px; color: var(--text-muted); cursor: pointer;
     transition: all var(--ease-fast);
 }
-.idea-chip:hover {
-    background: var(--bg-surface);
-    border-color: var(--border-md);
-    color: var(--text-secondary);
-}
+.idea-chip:hover { background: var(--bg-surface); border-color: var(--border-md); color: var(--text-secondary); }
+
 .btn-start {
-    width: 100%; margin-top: 18px;
-    padding: 12px 20px;
+    width: 100%; margin-top: 18px; padding: 12px 20px;
     background: var(--bg-ink); color: var(--text-inverse);
     border: none; border-radius: var(--r-md);
-    font-size: 14px; font-weight: 500;
-    cursor: pointer;
+    font-size: 14px; font-weight: 500; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 8px;
     transition: opacity var(--ease-fast);
 }
 .btn-start:hover { opacity: 0.84; }
 
-/* Question state */
-.q-header {
-    padding: 16px 20px 0;
-    flex-shrink: 0;
+/* Loading */
+.loading-wrap {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px; padding: 40px 22px;
 }
-.q-step {
-    font-size: 10px; font-weight: 600;
-    color: var(--text-muted);
-    letter-spacing: 0.09em; text-transform: uppercase;
-    margin-bottom: 14px;
+.loading-spinner {
+    width: 24px; height: 24px;
+    border: 2px solid var(--border-sm); border-top-color: var(--text-primary);
+    border-radius: 50%; animation: spin 700ms linear infinite;
 }
-.q-body {
-    flex: 1; overflow-y: auto;
-    padding: 0 20px 22px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-sm) transparent;
-}
-.q-body::-webkit-scrollbar { width: 3px; }
-.q-body::-webkit-scrollbar-thumb { background: var(--border-sm); border-radius: 2px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-msg { font-size: 13px; color: var(--text-muted); text-align: center; line-height: 1.65; }
 
-.q-text {
-    font-family: var(--font-display);
-    font-size: 19px; color: var(--text-primary);
-    line-height: 1.38; margin-bottom: 10px;
+/* Explore panel */
+.explore-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+
+.explore-header {
+    padding: 16px 20px 14px; border-bottom: 1px solid var(--border-sm); flex-shrink: 0;
 }
-.q-why {
-    font-size: 12.5px; color: var(--text-muted);
-    line-height: 1.65;
-    padding: 9px 12px;
-    background: var(--bg-surface);
-    border-radius: var(--r-sm);
-    border-left: 2px solid var(--border-md);
-    margin-bottom: 18px;
+.explore-dim-badge {
+    display: inline-flex; align-items: center;
+    padding: 2px 8px; border-radius: var(--r-full);
+    font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+    background: var(--bg-surface); color: var(--text-muted); margin-bottom: 6px;
 }
-.chips-label {
-    font-size: 10.5px; font-weight: 600;
-    color: var(--text-muted);
-    letter-spacing: 0.08em; text-transform: uppercase;
-    margin-bottom: 8px;
+.explore-dim-badge[data-dim="problem"]      { background: var(--burgundy-light); color: var(--burgundy); }
+.explore-dim-badge[data-dim="user"]         { background: var(--blue-grey-light); color: var(--blue-grey); }
+.explore-dim-badge[data-dim="bizmodel"]     { background: var(--amber-light); color: var(--amber); }
+.explore-dim-badge[data-dim="distribution"] { background: var(--sage-light); color: var(--sage); }
+.explore-dim-badge[data-dim="moat"]         { background: #f0edf8; color: #6b5a9e; }
+.explore-dim-badge[data-dim="risk"]         { background: #fdf0ee; color: #c05a48; }
+.explore-dim-badge[data-dim="unexpected"]   { background: #eef4f0; color: var(--sage); }
+
+.explore-node-label { font-family: var(--font-display); font-size: 18px; color: var(--text-primary); line-height: 1.3; }
+.explore-header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.btn-back-root {
+    font-size: 11px; color: var(--text-muted); background: none; border: none;
+    cursor: pointer; padding: 3px 0; white-space: nowrap; flex-shrink: 0;
+    transition: color var(--ease-fast);
 }
-.chips-list {
-    display: flex; flex-direction: column; gap: 6px;
-    margin-bottom: 14px;
+.btn-back-root:hover { color: var(--text-secondary); }
+
+.explore-body {
+    flex: 1; overflow-y: auto; padding: 16px 20px 20px;
+    scrollbar-width: thin; scrollbar-color: var(--border-sm) transparent;
 }
-.chip {
-    display: flex; align-items: center; gap: 9px;
-    padding: 10px 14px;
-    background: var(--bg-primary);
-    border: 1.5px solid var(--border-sm);
-    border-radius: var(--r-md);
-    font-size: 13px; color: var(--text-secondary);
-    cursor: pointer; text-align: left;
+.explore-body::-webkit-scrollbar { width: 3px; }
+.explore-body::-webkit-scrollbar-thumb { background: var(--border-sm); border-radius: 2px; }
+
+.explore-branches-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.branches-label { font-size: 10px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.09em; text-transform: uppercase; }
+.btn-regen {
+    font-size: 11px; color: var(--text-muted); background: none; border: none;
+    cursor: pointer; padding: 3px 6px; border-radius: var(--r-sm);
     transition: all var(--ease-fast);
 }
-.chip:hover {
-    background: var(--bg-surface);
-    border-color: var(--border-md);
-    color: var(--text-primary);
-}
-.chip.selected {
-    background: var(--burgundy-light);
-    border-color: var(--burgundy);
-    color: var(--burgundy);
-}
-.chip-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--border-md);
-    flex-shrink: 0;
-    transition: background var(--ease-fast);
-}
-.chip.selected .chip-dot { background: var(--burgundy); }
+.btn-regen:hover { background: var(--bg-surface); color: var(--text-secondary); }
 
-.answer-ta {
-    width: 100%; min-height: 72px;
-    background: var(--bg-primary);
-    border: 1.5px solid var(--border-sm);
-    border-radius: var(--r-md);
-    padding: 10px 12px;
+/* Branch cards */
+.branch-card {
+    width: 100%; padding: 12px 14px;
+    background: var(--bg-primary); border: 1.5px solid var(--border-sm);
+    border-radius: var(--r-md); text-align: left; cursor: pointer;
+    transition: all var(--ease-fast); margin-bottom: 7px; display: block;
+}
+.branch-card:hover { background: var(--bg-secondary); border-color: var(--border-md); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.branch-card:active { transform: translateY(0); }
+.branch-card-label { font-size: 13px; font-weight: 500; color: var(--text-primary); line-height: 1.35; margin-bottom: 4px; }
+.branch-card-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+.branch-card-dim {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 2px 7px; border-radius: var(--r-full);
+    margin-top: 7px; background: var(--bg-surface); color: var(--text-muted);
+}
+
+.branch-loading { display: flex; align-items: center; gap: 10px; padding: 24px 0; color: var(--text-muted); font-size: 13px; }
+.branch-spinner {
+    width: 16px; height: 16px; flex-shrink: 0;
+    border: 2px solid var(--border-sm); border-top-color: var(--text-primary);
+    border-radius: 50%; animation: spin 700ms linear infinite;
+}
+
+/* Custom branch */
+.explore-custom { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-sm); }
+.custom-label { font-size: 10px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 8px; }
+.custom-row { display: flex; gap: 7px; }
+.custom-ta {
+    flex: 1; min-height: 40px; max-height: 80px;
+    background: var(--bg-primary); border: 1.5px solid var(--border-sm);
+    border-radius: var(--r-md); padding: 8px 11px;
     font-size: 13px; color: var(--text-primary);
-    resize: none; outline: none;
-    line-height: 1.55;
+    resize: none; outline: none; line-height: 1.5;
     transition: border-color var(--ease-fast), box-shadow var(--ease-fast);
-    margin-bottom: 12px;
 }
-.answer-ta::placeholder { color: var(--text-muted); }
-.answer-ta:focus {
-    border-color: var(--blue-grey);
-    box-shadow: 0 0 0 3px var(--blue-grey-light);
-}
-
-.q-actions { display: flex; flex-direction: column; gap: 6px; }
-.btn-confirm {
-    width: 100%;
-    padding: 11px 16px;
+.custom-ta::placeholder { color: var(--text-muted); }
+.custom-ta:focus { border-color: var(--blue-grey); box-shadow: 0 0 0 3px var(--blue-grey-light); }
+.btn-custom-add {
+    padding: 8px 14px; flex-shrink: 0;
     background: var(--bg-ink); color: var(--text-inverse);
     border: none; border-radius: var(--r-md);
-    font-size: 13px; font-weight: 500;
-    cursor: pointer;
-    transition: opacity var(--ease-fast);
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    transition: opacity var(--ease-fast); align-self: flex-end;
 }
-.btn-confirm:hover { opacity: 0.84; }
-
-.q-sec-row { display: flex; gap: 6px; }
-.btn-sec {
-    flex: 1;
-    padding: 8px 8px;
-    background: transparent;
-    border: 1.5px solid var(--border-sm);
-    border-radius: var(--r-md);
-    font-size: 11.5px; color: var(--text-muted);
-    cursor: pointer;
-    transition: all var(--ease-fast);
-}
-.btn-sec:hover {
-    background: var(--bg-surface);
-    border-color: var(--border-md);
-    color: var(--text-secondary);
-}
-
+.btn-custom-add:hover { opacity: 0.84; }
 
 /* ============================================================
-   CALIBRATION BAR — bottom
+   BOTTOM BAR
    ============================================================ */
 .calib-bar {
-    height: var(--bottombar-h);
-    background: var(--bg-secondary);
+    height: var(--bottombar-h); background: var(--bg-secondary);
     border-top: 1px solid var(--border-sm);
     display: flex; align-items: center;
     padding: 0 16px; gap: 5px;
-    flex-shrink: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
+    flex-shrink: 0; overflow-x: auto; scrollbar-width: none;
 }
 .calib-bar::-webkit-scrollbar { display: none; }
+.calib-bar.inactive .calib-btn:not(.primary) { opacity: 0.28; pointer-events: none; }
 
 .calib-btn {
     display: flex; align-items: center; gap: 5px;
-    padding: 7px 12px;
-    background: transparent;
-    border: 1.5px solid var(--border-sm);
-    border-radius: var(--r-full);
+    padding: 7px 12px; background: transparent;
+    border: 1.5px solid var(--border-sm); border-radius: var(--r-full);
     font-size: 12px; color: var(--text-secondary);
-    cursor: pointer; white-space: nowrap;
-    flex-shrink: 0;
+    cursor: pointer; white-space: nowrap; flex-shrink: 0;
     transition: all var(--ease-fast);
 }
-.calib-btn:hover {
-    background: var(--bg-surface);
-    border-color: var(--border-md);
-    color: var(--text-primary);
-}
-.calib-btn.accent {
-    background: var(--burgundy-light);
-    border-color: var(--burgundy-mid);
-    color: var(--burgundy);
-}
+.calib-btn:hover { background: var(--bg-surface); border-color: var(--border-md); color: var(--text-primary); }
+.calib-btn.accent { background: var(--burgundy-light); border-color: var(--burgundy-mid); color: var(--burgundy); }
 .calib-btn.accent:hover { background: var(--burgundy-mid); }
-.calib-btn.primary {
-    background: var(--bg-ink);
-    border-color: var(--bg-ink);
-    color: var(--text-inverse);
-}
+.calib-btn.primary { background: var(--bg-ink); border-color: var(--bg-ink); color: var(--text-inverse); }
 .calib-btn.primary:hover { opacity: 0.84; }
-
-.calib-sep {
-    width: 1px; height: 22px;
-    background: var(--border-sm);
-    flex-shrink: 0; margin: 0 2px;
-}
-
+.calib-sep { width: 1px; height: 22px; background: var(--border-sm); flex-shrink: 0; margin: 0 2px; }
 .calib-icon { font-size: 11px; opacity: 0.65; line-height: 1; }
 
-
 /* ============================================================
-   FINAL PROMPT DRAWER
+   EXPORT DRAWER
    ============================================================ */
-.prompt-drawer {
+.export-drawer {
     position: fixed; bottom: 0; left: 0; right: 0;
-    height: 72vh;
-    background: var(--bg-secondary);
+    height: min(70vh, 600px); background: var(--bg-secondary);
     border-top: 1px solid var(--border-sm);
-    border-radius: 20px 20px 0 0;
-    box-shadow: var(--shadow-xl);
-    transform: translateY(100%);
-    transition: transform var(--ease-slow);
-    z-index: 500;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    box-shadow: var(--shadow-xl); z-index: 500;
     display: flex; flex-direction: column;
+    transform: translateY(100%); transition: transform var(--ease-slow);
 }
-.prompt-drawer.open { transform: translateY(0); }
+.export-drawer.open { transform: translateY(0); }
 
-.drawer-handle {
-    width: 38px; height: 4px;
-    background: var(--border-md);
-    border-radius: 2px;
-    margin: 12px auto 0;
-    flex-shrink: 0;
-}
+.drawer-handle { width: 36px; height: 4px; background: var(--border-md); border-radius: 2px; margin: 12px auto 0; flex-shrink: 0; }
 .drawer-header {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    padding: 14px 24px 12px;
-    border-bottom: 1px solid var(--border-sm);
-    flex-shrink: 0;
+    padding: 16px 24px 14px; border-bottom: 1px solid var(--border-sm);
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
 }
-.drawer-title {
-    font-family: var(--font-display);
-    font-size: 19px; color: var(--text-primary);
-}
-.drawer-sub {
-    font-size: 12px; color: var(--text-muted); margin-top: 2px;
-}
-.drawer-actions { display: flex; gap: 7px; align-items: center; }
+.drawer-title { font-family: var(--font-display); font-size: 19px; color: var(--text-primary); }
+.drawer-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.drawer-actions { display: flex; align-items: center; gap: 8px; }
 
-.btn-copy {
-    display: flex; align-items: center; gap: 6px;
-    padding: 8px 14px;
-    background: var(--bg-ink); color: var(--text-inverse);
-    border: none; border-radius: var(--r-md);
-    font-size: 12px; font-weight: 500;
-    cursor: pointer;
-    transition: opacity var(--ease-fast);
+.btn-copy-export {
+    padding: 7px 13px; background: var(--bg-surface); color: var(--text-secondary);
+    border: 1px solid var(--border-sm); border-radius: var(--r-md);
+    font-size: 12px; font-weight: 500; cursor: pointer; transition: all var(--ease-fast);
 }
-.btn-copy:hover { opacity: 0.84; }
+.btn-copy-export:hover { background: var(--border-sm); color: var(--text-primary); }
 
 .btn-close-drawer {
-    width: 32px; height: 32px;
-    display: flex; align-items: center; justify-content: center;
-    background: var(--bg-surface);
-    border: none; border-radius: var(--r-sm);
-    cursor: pointer; color: var(--text-muted);
-    transition: all var(--ease-fast);
+    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+    background: none; border: none; cursor: pointer; border-radius: var(--r-sm); color: var(--text-muted);
+    transition: background var(--ease-fast);
 }
-.btn-close-drawer:hover { background: var(--border-sm); color: var(--text-primary); }
+.btn-close-drawer:hover { background: var(--bg-surface); }
 
-.drawer-body {
-    flex: 1; overflow-y: auto;
-    padding: 24px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-sm) transparent;
+.drawer-body { flex: 1; overflow-y: auto; padding: 20px 24px 24px; }
+.export-output {
+    font-family: 'Courier New', monospace; font-size: 12.5px; color: var(--text-secondary);
+    line-height: 1.75; white-space: pre-wrap;
+    background: var(--bg-primary); border: 1px solid var(--border-sm);
+    border-radius: var(--r-md); padding: 16px 18px;
 }
-.drawer-body::-webkit-scrollbar { width: 4px; }
-.drawer-body::-webkit-scrollbar-thumb { background: var(--border-sm); border-radius: 2px; }
-
-.prompt-output {
-    background: var(--bg-primary);
-    border: 1.5px solid var(--border-sm);
-    border-radius: var(--r-lg);
-    padding: 22px 26px;
-    font-size: 13.5px; color: var(--text-primary);
-    line-height: 1.85;
-    white-space: pre-wrap;
-}
-
-.drawer-footer {
-    padding: 12px 24px;
-    border-top: 1px solid var(--border-sm);
-    display: flex; gap: 8px;
-    flex-shrink: 0;
-}
-.btn-drawer-sec {
-    flex: 1; padding: 10px 12px;
-    background: transparent;
-    border: 1.5px solid var(--border-sm);
-    border-radius: var(--r-md);
-    font-size: 12.5px; color: var(--text-secondary);
-    cursor: pointer;
-    transition: all var(--ease-fast);
-}
-.btn-drawer-sec:hover { background: var(--bg-surface); border-color: var(--border-md); color: var(--text-primary); }
-
-
-/* ============================================================
-   CALIBRATION MODAL (steer / custom direction)
-   ============================================================ */
-.calib-modal {
-    position: fixed;
-    bottom: calc(var(--bottombar-h) + 10px);
-    left: 50%; transform: translateX(-50%) translateY(16px);
-    width: min(480px, calc(100vw - 32px));
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-sm);
-    border-radius: var(--r-xl);
-    padding: 20px;
-    box-shadow: var(--shadow-xl);
-    z-index: 600;
-    opacity: 0; pointer-events: none;
-    transition: all var(--ease-med);
-}
-.calib-modal.open {
-    opacity: 1; pointer-events: all;
-    transform: translateX(-50%) translateY(0);
-}
-.calib-modal-title {
-    font-size: 13px; font-weight: 600;
-    color: var(--text-primary); margin-bottom: 10px;
-}
-.calib-modal-ta {
-    width: 100%; min-height: 76px;
-    background: var(--bg-primary);
-    border: 1.5px solid var(--border-sm);
-    border-radius: var(--r-md);
-    padding: 10px 12px;
-    font-size: 13px; color: var(--text-primary);
-    resize: none; outline: none;
-    line-height: 1.55;
-    transition: border-color var(--ease-fast), box-shadow var(--ease-fast);
-    margin-bottom: 12px;
-}
-.calib-modal-ta:focus {
-    border-color: var(--blue-grey);
-    box-shadow: 0 0 0 3px var(--blue-grey-light);
-}
-.calib-modal-footer { display: flex; gap: 8px; justify-content: flex-end; }
-.btn-calib-cancel {
-    padding: 8px 14px;
-    background: transparent;
-    border: 1.5px solid var(--border-sm);
-    border-radius: var(--r-md);
-    font-size: 12px; color: var(--text-muted);
-    cursor: pointer;
-    transition: all var(--ease-fast);
-}
-.btn-calib-cancel:hover { background: var(--bg-surface); }
-.btn-calib-apply {
-    padding: 8px 16px;
-    background: var(--bg-ink); color: var(--text-inverse);
-    border: none; border-radius: var(--r-md);
-    font-size: 12px; font-weight: 500;
-    cursor: pointer; transition: opacity var(--ease-fast);
-}
-.btn-calib-apply:hover { opacity: 0.84; }
-
 
 /* ============================================================
    NODE TOOLTIP
    ============================================================ */
 .node-tooltip {
-    position: fixed;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-sm);
-    border-radius: var(--r-lg);
-    padding: 14px 16px;
-    box-shadow: var(--shadow-lg);
-    max-width: 224px; min-width: 180px;
-    z-index: 700;
-    opacity: 0; pointer-events: none;
+    position: fixed; background: var(--bg-secondary);
+    border: 1px solid var(--border-sm); border-radius: var(--r-lg);
+    padding: 14px 16px; box-shadow: var(--shadow-lg);
+    max-width: 220px; min-width: 180px;
+    z-index: 700; opacity: 0; pointer-events: none;
     transition: opacity var(--ease-fast);
 }
 .node-tooltip.visible { opacity: 1; pointer-events: all; }
-.tt-cat {
-    font-size: 9.5px; font-weight: 600;
-    color: var(--text-muted);
-    letter-spacing: 0.09em; text-transform: uppercase;
-    margin-bottom: 4px;
-}
-.tt-val {
-    font-size: 13px; font-weight: 500;
-    color: var(--text-primary);
-    line-height: 1.4; margin-bottom: 12px;
-}
+.tt-cat { font-size: 9.5px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 4px; }
+.tt-val { font-size: 13px; font-weight: 500; color: var(--text-primary); line-height: 1.4; margin-bottom: 12px; }
 .tt-actions { display: flex; flex-direction: column; gap: 4px; }
 .tt-action {
-    padding: 6px 8px;
-    background: transparent;
-    border: 1px solid var(--border-sm);
-    border-radius: var(--r-sm);
-    font-size: 11.5px; color: var(--text-secondary);
-    cursor: pointer; text-align: left;
-    transition: all var(--ease-fast);
+    padding: 6px 8px; background: transparent; border: 1px solid var(--border-sm);
+    border-radius: var(--r-sm); font-size: 11.5px; color: var(--text-secondary);
+    cursor: pointer; text-align: left; transition: all var(--ease-fast);
 }
 .tt-action:hover { background: var(--bg-surface); color: var(--text-primary); }
-
+.tt-action.danger { color: #c05a48; border-color: #f0c4bc; }
+.tt-action.danger:hover { background: #fdf0ee; }
 
 /* ============================================================
-   OVERLAY
+   OVERLAY + TOAST
    ============================================================ */
 .overlay {
-    position: fixed; inset: 0;
-    background: rgba(28,25,23,0.38);
-    backdrop-filter: blur(2px);
-    z-index: 450;
-    opacity: 0; pointer-events: none;
-    transition: opacity var(--ease-med);
+    position: fixed; inset: 0; background: rgba(28,25,23,0.38);
+    backdrop-filter: blur(2px); z-index: 450;
+    opacity: 0; pointer-events: none; transition: opacity var(--ease-med);
 }
 .overlay.on { opacity: 1; pointer-events: all; }
 
+.toast {
+    position: fixed; bottom: 80px; right: 24px; z-index: 9999;
+    background: var(--text-primary); color: var(--bg-primary);
+    font-size: 12px; font-weight: 500; letter-spacing: 0.015em;
+    padding: 9px 14px; border-radius: 8px;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    pointer-events: none; max-width: 280px; line-height: 1.4;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
 
 /* ============================================================
    UTILITY
    ============================================================ */
 .hidden { display: none !important; }
-
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 .fade-in { animation: fadeUp 260ms ease forwards; }
 
-@keyframes lineDraw {
-    from { stroke-dashoffset: 200; opacity: 0; }
-    to   { stroke-dashoffset: 0; opacity: 1; }
-}
-.line-new { animation: lineDraw 400ms ease forwards; }
-
-
 /* ============================================================
-   DESTINATION SELECT
+   RESPONSIVE
    ============================================================ */
-.dest-select-wrap {
-    padding: 22px 20px 24px;
-    flex: 1; overflow-y: auto;
-}
-.dest-idea-echo {
-    font-size: 12px; color: var(--text-muted);
-    font-style: italic; line-height: 1.5;
-    border-left: 2px solid var(--border-sm);
-    padding-left: 10px;
-    margin-bottom: 14px;
-}
-.dest-select-title {
-    font-family: var(--font-display);
-    font-size: 18px; color: var(--text-primary);
-    line-height: 1.3; margin-bottom: 5px;
-}
-.dest-select-sub {
-    font-size: 12.5px; color: var(--text-muted);
-    line-height: 1.6; margin-bottom: 16px;
-}
-.dest-select-sub strong { color: var(--text-secondary); font-weight: 600; }
-
-.dest-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 7px;
-    margin-bottom: 16px;
-}
-.dest-card {
-    display: flex; flex-direction: column; align-items: flex-start;
-    gap: 2px; padding: 11px 12px;
-    background: var(--bg-primary);
-    border: 1.5px solid var(--border-sm);
-    border-radius: var(--r-md);
-    cursor: pointer; text-align: left;
-    transition: all var(--ease-fast);
-}
-.dest-card:hover { background: var(--bg-surface); border-color: var(--border-md); }
-.dest-card.selected { background: var(--burgundy-light); border-color: var(--burgundy); }
-
-.dest-card-icon {
-    font-size: 13px; color: var(--text-muted);
-    margin-bottom: 2px; line-height: 1;
-}
-.dest-card.selected .dest-card-icon { color: var(--burgundy); opacity: 0.9; }
-
-.dest-card-name {
-    font-size: 12px; font-weight: 600;
-    color: var(--text-primary); line-height: 1.25;
-}
-.dest-card.selected .dest-card-name { color: var(--burgundy); }
-
-.dest-card-desc {
-    font-size: 10.5px; color: var(--text-muted); line-height: 1.35;
-}
-.dest-card.selected .dest-card-desc { color: var(--burgundy); opacity: 0.65; }
-
-.btn-confirm-dest {
-    width: 100%; padding: 11px 16px;
-    background: var(--bg-ink); color: var(--text-inverse);
-    border: none; border-radius: var(--r-md);
-    font-size: 13px; font-weight: 500;
-    cursor: pointer; transition: opacity var(--ease-fast);
-}
-.btn-confirm-dest:hover { opacity: 0.84; }
-
-
-/* ============================================================
-   ARC MINI — collapsed indicator on canvas
-   ============================================================ */
-.arc-mini {
-    position: absolute; top: 14px; left: 14px;
-    display: flex; align-items: center; gap: 7px;
-    padding: 6px 12px 6px 10px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-sm);
-    border-radius: var(--r-full);
-    box-shadow: var(--shadow-sm);
-    z-index: 10; cursor: pointer;
-    font-size: 12px; color: var(--text-secondary);
-    white-space: nowrap; max-width: 300px;
-    opacity: 0; pointer-events: none;
-    transition: opacity var(--ease-med), background var(--ease-fast);
-}
-.arc-mini.visible { opacity: 1; pointer-events: all; }
-.arc-mini:hover { background: var(--bg-surface); }
-.arc-mini-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--burgundy); flex-shrink: 0;
-}
-.arc-mini-text {
-    flex: 1; overflow: hidden;
-    text-overflow: ellipsis; white-space: nowrap;
-}
-.arc-mini-open {
-    font-size: 11px; color: var(--text-muted); flex-shrink: 0;
-}
-
-
-/* ============================================================
-   QUESTION PROGRESS BAR
-   ============================================================ */
-.q-progress {
-    height: 2px; background: var(--border-sm);
-    border-radius: 1px; margin-bottom: 18px; overflow: hidden;
-}
-.q-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--burgundy), var(--blue-grey));
-    border-radius: 1px;
-    transition: width 420ms ease;
-}
-
-
-/* ============================================================
-   NODE EDIT HIGHLIGHT
-   ============================================================ */
-@keyframes editPulse {
-    0%   { box-shadow: 0 0 0 0 rgba(107,139,158,0.5); }
-    70%  { box-shadow: 0 0 0 8px rgba(107,139,158,0); }
-    100% { box-shadow: 0 0 0 0 rgba(107,139,158,0); }
-}
-.node-editing .node-inner { animation: editPulse 1s ease 2; }
-
-
-/* ============================================================
-   RESPONSIVE — MOBILE
-   ============================================================ */
-@media (max-width: 760px) {
-    :root {
-        --topbar-h: 52px;
-        --bottombar-h: 56px;
-        --arc-w: 0px;
-    }
+@media (max-width: 900px) {
     .arc-panel { display: none; }
-
-    .q-panel {
-        width: 100%;
-        position: fixed;
-        bottom: var(--bottombar-h);
-        left: 0; right: 0; top: auto;
-        height: auto; max-height: 58vh;
-        border-left: none;
-        border-top: 1px solid var(--border-sm);
-        z-index: 50;
-    }
-    .canvas-wrap {
-        height: calc(100vh - var(--topbar-h) - 58vh - var(--bottombar-h));
-    }
-    .quality-row { display: none; }
-    .logo-name { font-size: 15px; }
+    .coverage-row { display: none; }
+}
+@media (max-width: 680px) {
+    :root { --q-w: 100%; --bottombar-h: 56px; }
+    .main-content { flex-direction: column-reverse; }
+    .q-panel { width: 100%; height: 52vh; border-left: none; border-top: 1px solid var(--border-sm); }
+    .canvas-wrap { height: calc(100vh - var(--topbar-h) - 52vh - var(--bottombar-h)); }
     .calib-btn { font-size: 11px; padding: 6px 10px; }
-    .calib-bar { padding: 0 10px; gap: 4px; }
-}
-
-/* ---- Toast ---- */
-.toast {
-    position:fixed; bottom:80px; right:24px; z-index:9999;
-    background:var(--text-primary); color:var(--bg-primary);
-    font-size:12px; font-weight:500; letter-spacing:0.015em;
-    padding:9px 14px 9px 12px; border-radius:8px;
-    opacity:0; transform:translateY(8px);
-    transition:opacity 0.18s ease, transform 0.18s ease;
-    pointer-events:none; max-width:280px; line-height:1.4;
-}
-.toast.show { opacity:1; transform:translateY(0); }
-
-/* ---- Reset button ---- */
-.btn-reset {
-    font-size:11px; font-family:inherit; font-weight:500;
-    color:var(--text-muted); background:none; border:none;
-    cursor:pointer; padding:4px 8px; border-radius:5px;
-    opacity:0; pointer-events:none;
-    transition:opacity 0.25s, background 0.15s, color 0.15s;
-    white-space:nowrap;
-}
-.btn-reset.visible { opacity:1; pointer-events:all; }
-.btn-reset:hover { background:var(--bg-surface); color:var(--text-secondary); }
-
-/* ---- Calib bar locked state ---- */
-.calib-bar.inactive .calib-btn:not(.primary) {
-    opacity:0.28; pointer-events:none;
 }
 
     </style>
@@ -1158,15 +578,11 @@ textarea, input { font-family: var(--font-body); }
 
 <div class="app" id="app">
 
-    <!-- ====================================================
-         TOP BAR
-    ==================================================== -->
+    <!-- TOP BAR -->
     <header class="top-bar">
-
         <a class="logo" href="#">
             <div class="logo-mark">
-                <!-- mind-map mark -->
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <circle cx="8" cy="8" r="2.5" fill="white"/>
                     <circle cx="2.5" cy="3.5" r="1.5" fill="white" opacity="0.55"/>
                     <circle cx="13.5" cy="3.5" r="1.5" fill="white" opacity="0.55"/>
@@ -1181,89 +597,71 @@ textarea, input { font-family: var(--font-body); }
             <span class="logo-name">PromptMap</span>
         </a>
 
-        <button class="btn-reset" id="btnReset" onclick="resetSession()" title="Start a new session">↺ Start over</button>
-
+        <button class="btn-reset" id="btnReset" onclick="resetSession()">↺ Start over</button>
         <div class="top-bar-sep"></div>
 
-        <!-- Destination badge (hidden until session starts) -->
-        <div class="dest-badge hidden" id="destBadge" onclick="openChangeDestination()">
-            <div class="dest-badge-dot"></div>
-            <span class="dest-badge-text" id="destBadgeText">Build something</span>
-            <span class="dest-badge-change">· change</span>
-        </div>
-
-        <!-- Quality indicator -->
-        <div class="quality-row" id="qualityRow">
-            <span class="quality-label">Quality</span>
-            <div class="quality-pips" id="qualityPips">
-                <div class="quality-pip" id="qp0"></div>
-                <div class="quality-pip" id="qp1"></div>
-                <div class="quality-pip" id="qp2"></div>
-                <div class="quality-pip" id="qp3"></div>
-                <div class="quality-pip" id="qp4"></div>
+        <div class="coverage-row">
+            <span class="coverage-label">Coverage</span>
+            <div class="coverage-pips" id="coveragePips">
+                <div class="coverage-pip"></div>
+                <div class="coverage-pip"></div>
+                <div class="coverage-pip"></div>
+                <div class="coverage-pip"></div>
+                <div class="coverage-pip"></div>
             </div>
-            <span class="quality-state" id="qualityState">Waiting…</span>
+            <span class="coverage-state" id="coverageState">0 of 7</span>
         </div>
 
-        <button class="btn-gen" id="btnGenTop" onclick="generateFinalPrompt()">
-            <!-- spark icon -->
+        <button class="btn-export" onclick="exportStructure()">
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                 <path d="M6.5 1L7.9 5.1L12 6.5L7.9 7.9L6.5 12L5.1 7.9L1 6.5L5.1 5.1L6.5 1Z" fill="currentColor"/>
             </svg>
-            Generate prompt
+            Export structure
         </button>
+    </header>
 
-    </header><!-- /top-bar -->
 
-
-    <!-- ====================================================
-         MAIN CONTENT
-    ==================================================== -->
+    <!-- MAIN CONTENT -->
     <div class="main-content">
 
-        <!-- ARC PANEL -->
+        <!-- LEFT: Structure panel -->
         <aside class="arc-panel" id="arcPanel">
             <div class="arc-header">
-                <span class="arc-title">Prompt Arc</span>
-                <button class="arc-toggle" onclick="toggleArcPanel()" title="Collapse arc panel">
+                <span class="arc-title">Structure</span>
+                <button class="arc-toggle" onclick="toggleArcPanel()">
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                         <path d="M8 2L4 6L8 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
             </div>
+            <div class="arc-body">
 
-            <div class="arc-body" id="arcBody">
-
-                <!-- Stage track — populated by JS -->
-                <div class="arc-stages" id="arcStages"></div>
-
-                <!-- Narrative — hidden until session starts -->
-                <div class="arc-section hidden" id="arcSecDir">
-                    <div class="arc-sec-label">Current direction</div>
-                    <div class="arc-sec-body strong" id="arcDir"></div>
+                <div class="arc-section">
+                    <div class="arc-sec-label">Dimensions explored</div>
+                    <div id="coverageDims"></div>
                 </div>
 
-                <div class="arc-section hidden" id="arcSecClar">
-                    <div class="arc-sec-label">What's been clarified</div>
-                    <div class="arc-sec-body" id="arcClar"></div>
+                <div class="arc-section hidden" id="arcSecIdea">
+                    <div class="arc-sec-label">Idea</div>
+                    <div class="arc-sec-body strong" id="arcIdeaText"></div>
                 </div>
 
-                <div class="arc-section hidden" id="arcSecMiss">
-                    <div class="arc-sec-label">Still missing</div>
-                    <div class="arc-tags" id="arcMissTags"></div>
+                <div class="arc-section hidden" id="arcSecFocus">
+                    <div class="arc-sec-label">Currently exploring</div>
+                    <div class="arc-sec-body" id="arcFocusText"></div>
                 </div>
 
-                <div class="arc-section hidden" id="arcSecNext">
-                    <div class="arc-sec-label">Suggested next</div>
-                    <div class="arc-sec-body" id="arcNext"></div>
+                <div class="arc-section hidden" id="arcSecSuggest">
+                    <div class="arc-sec-label">Explore next</div>
+                    <div class="arc-sec-body" id="arcSuggestText"></div>
                 </div>
 
                 <p class="arc-empty-note" id="arcEmptyNote">
-                    Your prompt arc will appear here as you answer questions — narrating how your idea is taking shape.
+                    Your concept structure will build here as you explore. Each dimension you cover makes the idea more structurally sound.
                 </p>
 
             </div>
-        </aside><!-- /arc-panel -->
+        </aside>
 
 
         <!-- CANVAS -->
@@ -1271,181 +669,133 @@ textarea, input { font-family: var(--font-body); }
             <svg class="canvas-svg" id="canvasSvg" xmlns="http://www.w3.org/2000/svg"></svg>
             <div class="canvas-nodes" id="canvasNodes"></div>
 
-            <!-- Empty state -->
             <div class="canvas-empty" id="canvasEmpty">
-                <div class="canvas-empty-title">Your thought map</div>
-                <div class="canvas-empty-sub">Enter your rough idea in the panel on the right to begin.</div>
+                <div class="canvas-empty-title">Your idea map</div>
+                <div class="canvas-empty-sub">Enter your idea on the right to start exploring its structure.</div>
             </div>
 
-            <!-- Arc mini — shown when arc panel is collapsed -->
             <div class="arc-mini" id="arcMini" onclick="toggleArcPanel()">
                 <div class="arc-mini-dot"></div>
-                <span class="arc-mini-text" id="arcMiniText">Prompt Arc</span>
-                <span class="arc-mini-open">‹ open</span>
+                <span>Structure</span>
+                <span style="opacity:0.5;margin-left:2px;">‹ open</span>
             </div>
-        </main><!-- /canvas -->
+        </main>
 
 
-        <!-- QUESTION PANEL -->
+        <!-- RIGHT: Explore panel -->
         <aside class="q-panel" id="qPanel">
 
-            <!-- STATE A: Idea input -->
+            <!-- State A: Idea input -->
             <div class="idea-wrap" id="ideaWrap">
-                <div class="idea-title">What's your rough idea?</div>
-                <div class="idea-sub">Anything — a product, a question, a creative direction, a strategy challenge, a thing you need written.</div>
+                <div class="idea-title">What's your idea?</div>
+                <div class="idea-sub">A product, business, strategy, or creative concept. Anything you want to explore and pressure-test.</div>
                 <textarea
                     class="idea-textarea"
                     id="ideaTextarea"
-                    placeholder="e.g. I want to build an AI work coach…"
+                    placeholder="e.g. A fitness app for time-poor professionals…"
                     rows="4"
                 ></textarea>
                 <div class="idea-chips">
-                    <button class="idea-chip" onclick="useExample(this)">AI work coach</button>
-                    <button class="idea-chip" onclick="useExample(this)">Luxury landing page</button>
-                    <button class="idea-chip" onclick="useExample(this)">Pitch deck</button>
-                    <button class="idea-chip" onclick="useExample(this)">Competitor analysis</button>
-                    <button class="idea-chip" onclick="useExample(this)">Brand strategy</button>
-                    <button class="idea-chip" onclick="useExample(this)">Essay about focus</button>
+                    <button class="idea-chip" onclick="useExample(this)">Fitness app</button>
+                    <button class="idea-chip" onclick="useExample(this)">B2B legal SaaS</button>
+                    <button class="idea-chip" onclick="useExample(this)">Creator monetisation</button>
+                    <button class="idea-chip" onclick="useExample(this)">Corporate sustainability</button>
+                    <button class="idea-chip" onclick="useExample(this)">Premium coffee subscription</button>
+                    <button class="idea-chip" onclick="useExample(this)">AI hiring tool</button>
                 </div>
                 <button class="btn-start" onclick="startSession()">
                     <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                         <path d="M6.5 1L7.9 5.1L12 6.5L7.9 7.9L6.5 12L5.1 7.9L1 6.5L5.1 5.1L6.5 1Z" fill="currentColor"/>
                     </svg>
-                    Start mapping
+                    Start mapping →
                 </button>
             </div>
 
-            <!-- STATE B: Destination select (hidden until idea submitted) -->
-            <div class="dest-select-wrap hidden" id="destWrap"></div>
-
-            <!-- STATE C: Active question (hidden until session starts) -->
-            <div class="q-header hidden" id="qHeader">
-                <div class="q-step" id="qStep">Question 1 of ~8</div>
+            <!-- State B: Loading -->
+            <div class="loading-wrap hidden" id="loadingWrap">
+                <div class="loading-spinner"></div>
+                <div class="loading-msg" id="loadingMsg">Mapping your idea…</div>
             </div>
-            <div class="q-body hidden" id="qBody">
-                <div class="q-progress"><div class="q-progress-fill" id="qProgressFill" style="width:0%"></div></div>
-                <div class="q-text" id="qText"></div>
-                <div class="q-why" id="qWhy"></div>
-                <div class="chips-label">Suggested answers</div>
-                <div class="chips-list" id="chipsList"></div>
-                <textarea
-                    class="answer-ta"
-                    id="answerTa"
-                    placeholder="Or write your own answer…"
-                ></textarea>
-                <div class="q-actions">
-                    <button class="btn-confirm" onclick="handleAnswer()">Confirm answer →</button>
-                    <div class="q-sec-row">
-                        <button class="btn-sec" onclick="notSure()">Not sure</button>
-                        <button class="btn-sec" onclick="skipQuestion()">Skip</button>
-                        <button class="btn-sec" onclick="generateFinalPrompt()">Generate now</button>
+
+            <!-- State C: Explore -->
+            <div class="explore-wrap hidden" id="exploreWrap">
+                <div class="explore-header">
+                    <div class="explore-dim-badge" id="exploreNodeDim">Idea</div>
+                    <div class="explore-header-row">
+                        <div class="explore-node-label" id="exploreNodeLabel"></div>
+                        <button class="btn-back-root hidden" id="btnBackRoot" onclick="goToRoot()">↖ Root</button>
+                    </div>
+                </div>
+                <div class="explore-body">
+                    <div class="explore-branches-row">
+                        <span class="branches-label">Branch directions</span>
+                        <button class="btn-regen" onclick="regenerateBranches()">↻ Regen</button>
+                    </div>
+                    <div id="branchList"></div>
+
+                    <div class="explore-custom">
+                        <div class="custom-label">Add your own</div>
+                        <div class="custom-row">
+                            <textarea class="custom-ta" id="customBranchTa" placeholder="Write your own direction…" rows="2"></textarea>
+                            <button class="btn-custom-add" onclick="addCustomBranch()">Add →</button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-        </aside><!-- /q-panel -->
+        </aside>
 
     </div><!-- /main-content -->
 
 
-    <!-- ====================================================
-         CALIBRATION BAR
-    ==================================================== -->
-    <nav class="calib-bar" id="calibBar">
-        <button class="calib-btn accent" onclick="openCalibModal('steer')">
-            <span class="calib-icon">↗</span> Steer differently
+    <!-- BOTTOM BAR -->
+    <nav class="calib-bar inactive" id="calibBar">
+        <button class="calib-btn accent" onclick="exploreAction('unexpected')">
+            <span class="calib-icon">✦</span> Surprise me
         </button>
-        <button class="calib-btn" onclick="applyAction('deeper')">
+        <button class="calib-btn" onclick="exploreAction('challenge')">
+            <span class="calib-icon">?</span> Challenge this
+        </button>
+        <button class="calib-btn" onclick="exploreAction('missing')">
+            <span class="calib-icon">◎</span> What's missing?
+        </button>
+        <div class="calib-sep"></div>
+        <button class="calib-btn" onclick="exploreAction('deepen')">
             <span class="calib-icon">↓</span> Go deeper
         </button>
-        <button class="calib-btn" onclick="applyAction('zoom')">
+        <button class="calib-btn" onclick="exploreAction('zoom')">
             <span class="calib-icon">⊙</span> Zoom out
         </button>
-        <button class="calib-btn" onclick="applyAction('branch')">
-            <span class="calib-icon">⌥</span> Branch this
-        </button>
         <div class="calib-sep"></div>
-        <button class="calib-btn" onclick="applyAction('challenge')">
-            <span class="calib-icon">?</span> Challenge assumptions
-        </button>
-        <button class="calib-btn" onclick="applyAction('missing')">
-            <span class="calib-icon">◎</span> Find missing angle
-        </button>
-        <button class="calib-btn" onclick="applyAction('sharper')">
-            <span class="calib-icon">◈</span> Make sharper
-        </button>
-        <div class="calib-sep"></div>
-        <button class="calib-btn" onclick="openChangeDestination()">
-            <span class="calib-icon">⊞</span> Change destination
-        </button>
-        <button class="calib-btn" onclick="openCalibModal('custom')">
-            <span class="calib-icon">✎</span> Add my direction
-        </button>
-        <div class="calib-sep"></div>
-        <button class="calib-btn primary" onclick="generateFinalPrompt()">
-            <span class="calib-icon">✦</span> Generate prompt
+        <button class="calib-btn primary" onclick="exportStructure()">
+            <span class="calib-icon">↗</span> Export structure
         </button>
     </nav>
 
 </div><!-- /app -->
 
 
-<!-- ====================================================
-     OVERLAY
-==================================================== -->
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
-
-<!-- ====================================================
-     NODE TOOLTIP
-==================================================== -->
 <div class="node-tooltip" id="nodeTooltip">
     <div class="tt-cat" id="ttCat"></div>
     <div class="tt-val" id="ttVal"></div>
     <div class="tt-actions">
-        <button class="tt-action" onclick="editNodeTt()">✎  Edit this answer</button>
-        <button class="tt-action" onclick="branchNodeTt()">⌥  Branch deeper from here</button>
-        <button class="tt-action" onclick="generateFromNode()">✦  Generate prompt from here</button>
+        <button class="tt-action" onclick="exploreFromTt()">↗ Explore branches</button>
+        <button class="tt-action danger" onclick="removeFromTt()">× Remove node</button>
     </div>
 </div>
 
-
-<!-- ====================================================
-     CALIBRATION MODAL
-==================================================== -->
-<div class="calib-modal" id="calibModal">
-    <div class="calib-modal-title" id="calibModalTitle">Steer the direction</div>
-    <textarea
-        class="calib-modal-ta"
-        id="calibModalTa"
-        placeholder="e.g. This is too functional — I want it more emotionally compelling and brand-led."
-    ></textarea>
-    <div class="calib-modal-footer">
-        <button class="btn-calib-cancel" onclick="closeCalibModal()">Cancel</button>
-        <button class="btn-calib-apply" onclick="applyCustomCalib()">Apply direction →</button>
-    </div>
-</div>
-
-
-<!-- ====================================================
-     FINAL PROMPT DRAWER
-==================================================== -->
-<div class="prompt-drawer" id="promptDrawer">
+<div class="export-drawer" id="exportDrawer">
     <div class="drawer-handle"></div>
     <div class="drawer-header">
         <div>
-            <div class="drawer-title">Your Claude prompt</div>
-            <div class="drawer-sub" id="drawerSub">Generated from your thought map</div>
+            <div class="drawer-title">Concept structure</div>
+            <div class="drawer-sub" id="exportDrawerSub">Your idea, organised by dimension</div>
         </div>
         <div class="drawer-actions">
-            <button class="btn-copy" id="btnCopy" onclick="copyPrompt()">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
-                    <path d="M2 8V2C2 1.44772 2.44772 1 3 1H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-                Copy prompt
-            </button>
-            <button class="btn-close-drawer" onclick="closePromptDrawer()">
+            <button class="btn-copy-export" id="btnCopyExport" onclick="copyExport()">Copy</button>
+            <button class="btn-close-drawer" onclick="closeExportDrawer()">
                 <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
                     <path d="M1.5 1.5L9.5 9.5M9.5 1.5L1.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
@@ -1453,575 +803,482 @@ textarea, input { font-family: var(--font-body); }
         </div>
     </div>
     <div class="drawer-body">
-        <div class="prompt-output" id="promptOutput"></div>
-    </div>
-    <div class="drawer-footer">
-        <button class="btn-drawer-sec" onclick="improvePrompt()">✦  Improve with one more question</button>
-        <button class="btn-drawer-sec" onclick="closePromptDrawer()">← Back to map</button>
+        <div class="export-output" id="exportOutput"></div>
     </div>
 </div>
 
-
 <div class="toast" id="toast"></div>
 
-<!-- ====================================================
-     JAVASCRIPT — Chunks 2 · 3 · 4 · 5
-==================================================== -->
+
 <script>
 'use strict';
 
 /* ============================================================
-   CONSTANTS
+   DIMENSIONS
    ============================================================ */
-const STAGE_NAMES = [
-    'Seed idea','Destination','Audience','Outcome',
-    'Format','Tone / style','Constraints','Success criteria',
-    'Prompt-ready','Excellent prompt'
+const DIMENSIONS = [
+    { id: 'problem',      label: 'Problem' },
+    { id: 'user',         label: 'Target User' },
+    { id: 'bizmodel',     label: 'Business Model' },
+    { id: 'distribution', label: 'Distribution' },
+    { id: 'moat',         label: 'Moat' },
+    { id: 'risk',         label: 'Risk' },
+    { id: 'unexpected',   label: 'Unexpected' },
 ];
-const QUALITY_LABELS = [
-    'Waiting…','Rough idea','Taking shape',
-    'Strong direction','Prompt-ready','Excellent prompt'
-];
-const DESTINATIONS = [
-    { id:'build',      icon:'⬡', label:'Build something',      desc:'Apps, tools, prototypes, websites, products',
-      keywords:['build','create','make','develop','prototype','app','website','tool','product','dashboard',
-                'landing','system','platform','interface','code','implement','launch','startup','saas',
-                'plugin','widget','work coach','coach'] },
-    { id:'analyse',    icon:'◎', label:'Analyse something',     desc:'Audits, critiques, evaluations, reviews',
-      keywords:['analyse','analyze','audit','review','critique','evaluate','assess','examine',
-                'investigate','diagnose','benchmark','compare','gap analysis','competitor analysis','analysis'] },
-    { id:'write',      icon:'✦', label:'Write something',       desc:'Copy, essays, scripts, emails, proposals',
-      keywords:['write','draft','essay','article','blog','email','script','copy','content','narrative',
-                'letter','proposal','lyrics','story','post','newsletter','pitch deck','pitch','speech','poem'] },
-    { id:'design',     icon:'◈', label:'Design something',      desc:'Visual direction, UX, brand, interfaces',
-      keywords:['design','visual','ui','ux','layout','aesthetic','look and feel','identity','logo',
-                'typography','colour','color','luxury landing','landing page design','brand identity'] },
-    { id:'research',   icon:'◉', label:'Research something',    desc:'Market scans, competitor intel, deep dives',
-      keywords:['research','investigate','study','explore','understand','learn about','find out',
-                'market research','competitor research','survey','scan'] },
-    { id:'strategise', icon:'⊞', label:'Strategise something',  desc:'Strategy, positioning, decisions, planning',
-      keywords:['strategy','strategise','strategize','plan','roadmap','positioning','go-to-market',
-                'business plan','decision','framework','approach','brand strategy','go to market'] }
-];
-const INGREDIENTS = ['Audience','Outcome','Format','Tone','Context','Constraints','Success criteria'];
+
+function normalizeDim(str) {
+    if (!str) return null;
+    const s = str.toLowerCase().trim();
+    if (s.includes('problem') || s.includes('opportunit')) return 'problem';
+    if (s.includes('user') || s.includes('customer') || s.includes('audience') || s.includes('target')) return 'user';
+    if (s.includes('business') || s.includes('model') || s.includes('revenue') || s.includes('monetis') || s.includes('monetiz')) return 'bizmodel';
+    if (s.includes('distribut') || s.includes('go-to-market') || s.includes('gtm') || s.includes('acqui') || s.includes('channel') || s.includes('reach')) return 'distribution';
+    if (s.includes('moat') || s.includes('defensib') || s.includes('differenti') || s.includes('unfair') || s.includes('advantage')) return 'moat';
+    if (s.includes('risk') || s.includes('kill') || s.includes('fail') || s.includes('challenge') || s.includes('threat') || s.includes('critic')) return 'risk';
+    if (s.includes('unexpected') || s.includes('surpris') || s.includes('contrarian') || s.includes('unknown')) return 'unexpected';
+    return null;
+}
+
+function getDimLabel(dimId) {
+    return DIMENSIONS.find(d => d.id === dimId)?.label || null;
+}
 
 /* ============================================================
-   QUESTION BANKS  (7 per destination)
-   answerKey  → slot in answers{}
-   parentStrategy → getParentNode() logic
+   STATE
    ============================================================ */
-const QUESTION_BANKS = {
-    build: [
-        { id:'audience',      text:'Who is this for?',
-          why:'Defining the audience determines tone, depth, feature set, and what "good" looks like. Without this, Claude defaults to generic solutions.',
-          chips:['Senior professionals','Founders & entrepreneurs','Technical developers','Creative professionals','General consumers'],
-          category:'Audience', answerKey:'audience', parentStrategy:'destination' },
-        { id:'outcome',       text:'What should it help them do?',
-          why:'The core job-to-be-done anchors every product and design decision. Claude needs to know what success means for the user.',
-          chips:['Think through complex challenges','Make faster, better decisions','Organise and prioritise work','Generate creative options','Reflect and improve over time'],
-          category:'Outcome', answerKey:'outcome', parentStrategy:'audience' },
-        { id:'format',        text:'What should Claude actually produce?',
-          why:'Without a clear output format, Claude decides for itself — often producing something that needs significant rework.',
-          chips:['Working HTML/CSS/JS prototype','UX flows and wireframe brief','Feature specification doc','Technical architecture overview','Full product brief with roadmap'],
-          category:'Format', answerKey:'format', parentStrategy:'outcome' },
-        { id:'tone',          text:'What should the experience feel like?',
-          why:'The emotional quality shapes every design decision — layout, typography, colour, interaction model, and copy tone.',
-          chips:['Premium and considered','Calm and focused','Bold and energetic','Warm and human','Minimal and invisible'],
-          category:'Tone', answerKey:'tone', parentStrategy:'destination' },
-        { id:'context',       text:'What should the first version include?',
-          why:'Scoping the MVP prevents Claude from building something overengineered, bloated, or missing the core loop.',
-          chips:['One focused core feature only','Onboarding + core interaction','Input → thinking → output loop','Interactive branching experience','Dashboard with key actions'],
-          category:'Scope', answerKey:'context', parentStrategy:'outcome' },
-        { id:'constraints',   text:'What should it avoid?',
-          why:'Constraints steer Claude away from the most common failure modes: clutter, generic layouts, broken interactions.',
-          chips:['No generic chatbot interface','No dashboard clutter','No external dependencies','No backend required','Avoid visual noise'],
-          category:'Constraints', answerKey:'constraints', parentStrategy:'destination' },
-        { id:'successcriteria', text:'What does a genuinely great output look like?',
-          why:'Without a success bar, Claude aims for acceptable rather than excellent. This is the most underused prompt ingredient.',
-          chips:['Immediately usable without edits','Feels professionally designed','Runs from a single file','Core interaction fully working','Specific and non-generic throughout'],
-          category:'Success criteria', answerKey:'successcriteria', parentStrategy:'destination' }
-    ],
-    analyse: [
-        { id:'subject',       text:'What exactly should be analysed?',
-          why:'The more specific the subject, the more useful the analysis. Vague subjects produce vague critiques.',
-          chips:['A product or service','A business strategy or plan','A piece of content or copy','A market or competitive landscape','A specific decision or proposal'],
-          category:'Subject', answerKey:'context', parentStrategy:'destination' },
-        { id:'decision',      text:'What decision should this analysis support?',
-          why:'Analysis without a decision context produces interesting observations with no actionable conclusions.',
-          chips:['Whether to invest or proceed','How to improve or fix it','Whether it will work in practice','Where the biggest gaps are','How it compares to alternatives'],
-          category:'Outcome', answerKey:'outcome', parentStrategy:'subject' },
-        { id:'audience',      text:'Who is reading this analysis?',
-          why:'The audience determines depth, jargon level, and whether the output should be balanced or blunt.',
-          chips:['Founders and senior leadership','Investors or board members','Practitioners and specialists','External clients or partners','Personal use only'],
-          category:'Audience', answerKey:'audience', parentStrategy:'destination' },
-        { id:'bluntness',     text:'How critical or blunt should the review be?',
-          why:'Without guidance, Claude defaults to diplomatic and balanced. Specify if you need honest, unfiltered analysis.',
-          chips:['Blunt and direct — no softening','Honest but constructive','Balanced pros and cons','Positive with risks flagged','Executive-friendly summary'],
-          category:'Tone', answerKey:'tone', parentStrategy:'decision' },
-        { id:'criteria',      text:'What lens or criteria should the analysis use?',
-          why:'Criteria focus the analysis and prevent Claude from evaluating the wrong dimensions.',
-          chips:['Commercial viability and revenue','User experience and desirability','Technical feasibility','Strategic fit and positioning','Risk and downside scenarios'],
-          category:'Constraints', answerKey:'constraints', parentStrategy:'destination' },
-        { id:'format',        text:'What format should the output take?',
-          why:'A well-structured analysis is 10× more useful than a wall of prose.',
-          chips:['Structured scorecard with ratings','Strengths and weaknesses breakdown','Narrative executive summary','Detailed category breakdown','One-page decision memo'],
-          category:'Format', answerKey:'format', parentStrategy:'destination' },
-        { id:'successcriteria', text:'What makes this analysis genuinely useful?',
-          why:'Useful analysis produces a clear recommendation, not just observations.',
-          chips:['Clear verdict or recommendation','Specific, actionable insights','Identifies root causes not symptoms','Prioritised by importance','Honest about uncertainty'],
-          category:'Success criteria', answerKey:'successcriteria', parentStrategy:'destination' }
-    ],
-    write: [
-        { id:'format',        text:'What are we writing?',
-          why:'Different formats have completely different conventions, lengths, and success criteria. Be specific.',
-          chips:['Essay or long-form article','Email or outreach message','Sales or landing page copy','Pitch deck narrative','Social post or thread'],
-          category:'Format', answerKey:'format', parentStrategy:'destination' },
-        { id:'audience',      text:'Who is this written for?',
-          why:'The reader determines vocabulary, assumed knowledge, emotional register, and what they need to believe by the end.',
-          chips:['Senior decision-makers','Technical specialists','General consumers','Investors or stakeholders','Peers or community members'],
-          category:'Audience', answerKey:'audience', parentStrategy:'format' },
-        { id:'outcome',       text:'What should it make the reader feel or do?',
-          why:"All great writing moves the reader toward something. Without a goal, Claude writes interesting content that changes nothing.",
-          chips:['Take an immediate action','Change their perspective','Feel inspired or motivated','Trust the author or brand','Make a purchase or commit'],
-          category:'Outcome', answerKey:'outcome', parentStrategy:'audience' },
-        { id:'tone',          text:'What tone or voice should it have?',
-          why:'Tone is the single biggest differentiator between generic content and something that feels distinctly authored.',
-          chips:['Sharp, direct, and opinionated','Warm and personal','Authoritative and expert','Playful and irreverent','Calm and considered'],
-          category:'Tone', answerKey:'tone', parentStrategy:'audience' },
-        { id:'context',       text:'What angle or hook makes this interesting?',
-          why:'The hook transforms a topic into a story. Without it, Claude writes competent but forgettable content.',
-          chips:['A contrarian or unexpected take','A specific story or example','A counterintuitive insight','A strong opening provocation','A clear framework or structure'],
-          category:'Angle', answerKey:'context', parentStrategy:'outcome' },
-        { id:'constraints',   text:'What should it avoid?',
-          why:'Constraints prevent the most common writing failures: clichés, hedging, weak openings, corporate-speak.',
-          chips:['No clichés or filler phrases','No hedging or qualifying language','Avoid listicle structure','No passive voice','No corporate-speak'],
-          category:'Constraints', answerKey:'constraints', parentStrategy:'destination' },
-        { id:'successcriteria', text:'What does genuinely good writing look like here?',
-          why:'The difference between good and excellent writing is clarity about what excellent means in this specific context.',
-          chips:['Every sentence earns its place','The opening is impossible to ignore','The reader takes the intended action','Sounds like a real person wrote it','Specific, not generic throughout'],
-          category:'Success criteria', answerKey:'successcriteria', parentStrategy:'destination' }
-    ],
-    design: [
-        { id:'what',          text:'What are we designing?',
-          why:'Design outputs range from a brand identity to a single screen. Specificity determines the depth Claude can give.',
-          chips:['Brand identity system','Landing page or website','Product UI or dashboard','Editorial or print layout','Interior or spatial concept'],
-          category:'Format', answerKey:'format', parentStrategy:'destination' },
-        { id:'feel',          text:'What should it feel like?',
-          why:'Emotional quality is the starting point for all visual decisions. Everything else flows from the feeling.',
-          chips:['Premium and understated','Bold and confident','Warm and approachable','Minimal and architectural','Playful and energetic'],
-          category:'Tone', answerKey:'tone', parentStrategy:'what' },
-        { id:'audience',      text:'Who is the audience?',
-          why:"Design that doesn't speak to its audience fails regardless of quality. Every visual decision should serve this person.",
-          chips:['High-net-worth individuals','Knowledge workers','Young creative consumers','Technical specialists','Mass market consumers'],
-          category:'Audience', answerKey:'audience', parentStrategy:'destination' },
-        { id:'references',    text:'What visual references or worlds matter?',
-          why:'References communicate aesthetic intent faster and more precisely than any description can.',
-          chips:['Specific brands to draw from','A particular era or movement','A medium (film, fashion, architecture)','Competitor to reference or avoid','No references — be original'],
-          category:'Context', answerKey:'context', parentStrategy:'feel' },
-        { id:'avoid',         text:'What should it avoid looking like?',
-          why:'Knowing what to avoid protects against generic defaults and category clichés.',
-          chips:['Generic SaaS aesthetic','Corporate or institutional feel','Over-designed and cluttered','Too minimal or lifeless','Cliché for this sector'],
-          category:'Constraints', answerKey:'constraints', parentStrategy:'destination' },
-        { id:'output',        text:'What should Claude produce?',
-          why:'Design direction can range from a written brief to CSS variables to a full art direction document.',
-          chips:['Written visual direction brief','Typography and colour recommendations','Component-level UI specs','Moodboard description and rationale','Full implementation in code'],
-          category:'Outcome', answerKey:'outcome', parentStrategy:'destination' },
-        { id:'successcriteria', text:'What makes this design direction excellent?',
-          why:"Without a bar, Claude defaults to safe. Define what excellent means for this specific project.",
-          chips:['Feels original and ownable','Immediately communicates the brand world','Specific enough to act on','Stands apart from the category','Visually coherent end-to-end'],
-          category:'Success criteria', answerKey:'successcriteria', parentStrategy:'destination' }
-    ],
-    research: [
-        { id:'topic',         text:'What topic should be researched?',
-          why:'A precisely framed topic produces focused, useful findings rather than a general overview.',
-          chips:['A specific market or industry','A technology or approach','A competitor or company','A user behaviour or trend','A regulatory or policy area'],
-          category:'Context', answerKey:'context', parentStrategy:'destination' },
-        { id:'question',      text:'What specific question should the research answer?',
-          why:'A research question keeps Claude focused on what matters instead of producing an encyclopaedic overview.',
-          chips:['Is there a real opportunity here?','How do leading players approach this?','What are the key risks and unknowns?','What does best-in-class look like?','What has changed recently and why?'],
-          category:'Outcome', answerKey:'outcome', parentStrategy:'topic' },
-        { id:'audience',      text:'Who will use this research?',
-          why:'The audience determines appropriate depth, format, and level of assumed knowledge.',
-          chips:['Founders making a product decision','Investors evaluating an opportunity','Senior leaders setting strategy','Practitioners and specialists','General readers'],
-          category:'Audience', answerKey:'audience', parentStrategy:'destination' },
-        { id:'depth',         text:'How deep should the research go?',
-          why:'Depth affects length, sourcing rigour, and analytical quality of the output.',
-          chips:['High-level overview and orientation','Substantive synthesis of key themes','Deep dive with multiple angles','Comparative analysis of options','Hypothesis-driven exploration'],
-          category:'Tone', answerKey:'tone', parentStrategy:'question' },
-        { id:'format',        text:'What format should the output take?',
-          why:'Research in the right format is immediately usable. Without guidance, Claude defaults to prose.',
-          chips:['Executive briefing (one page)','Structured report with sections','Bulleted insight summary','Competitive landscape matrix','Q&A addressing specific questions'],
-          category:'Format', answerKey:'format', parentStrategy:'destination' },
-        { id:'constraints',   text:'Any important constraints or caveats?',
-          why:'Constraints prevent Claude from including outdated, irrelevant, or low-quality information.',
-          chips:['Focus on the last 2–3 years only','Prioritise primary sources','Flag uncertainty where relevant','Avoid speculation without evidence','Keep to the most important 20%'],
-          category:'Constraints', answerKey:'constraints', parentStrategy:'destination' },
-        { id:'successcriteria', text:'What makes this research genuinely useful?',
-          why:'Useful research changes what you believe or decide. Unhelpful research is just information.',
-          chips:['Clear insight, not just information','Leads to a decision or action','Flags what is unknown','Prioritised by importance','Synthesised, not just compiled'],
-          category:'Success criteria', answerKey:'successcriteria', parentStrategy:'destination' }
-    ],
-    strategise: [
-        { id:'goal',          text:'What goal are we strategising around?',
-          why:"Strategy without a clear goal produces recommendations that can't be evaluated. The goal is the anchor.",
-          chips:['Growing revenue or market share','Entering a new market','Repositioning the brand or product','Navigating a challenge or crisis','Making a high-stakes decision'],
-          category:'Outcome', answerKey:'outcome', parentStrategy:'destination' },
-        { id:'context',       text:'What context does the strategist need?',
-          why:'Strategic recommendations without context are generic frameworks, not real strategy.',
-          chips:['Current market position and size','Key competitors and their moves','Available resources and constraints','The core customer and their needs','What has already been tried'],
-          category:'Context', answerKey:'context', parentStrategy:'goal' },
-        { id:'audience',      text:'Who is making or reading this strategy?',
-          why:'A solo founder needs different strategy output than a board or investor audience.',
-          chips:['Solo founder or small team','Executive leadership team','Investors or board members','External advisors','Personal decision-making'],
-          category:'Audience', answerKey:'audience', parentStrategy:'destination' },
-        { id:'constraints',   text:'What constraints must the strategy respect?',
-          why:'Unconstrained strategy is usually impractical. Real constraints produce real, actionable recommendations.',
-          chips:['Limited budget or runway','Small team, limited bandwidth','Regulatory or compliance limits','Existing commitments or contracts','Competitive timing pressure'],
-          category:'Constraints', answerKey:'constraints', parentStrategy:'goal' },
-        { id:'approach',      text:'What kind of strategic thinking is needed?',
-          why:'Different situations call for completely different modes of thinking and recommendation styles.',
-          chips:['Bold and contrarian options','Conservative and risk-managed','Generate multiple scenarios','Critique the current approach','Find the highest-leverage move'],
-          category:'Tone', answerKey:'tone', parentStrategy:'destination' },
-        { id:'format',        text:'What should the strategic output look like?',
-          why:'Strategy can be a one-page brief, a set of options, or a detailed framework. The format determines usefulness.',
-          chips:['Single clear recommendation','Three strategic options compared','Framework or decision matrix','Narrative strategic memo','Action plan with priorities'],
-          category:'Format', answerKey:'format', parentStrategy:'destination' },
-        { id:'successcriteria', text:'What does excellent strategic advice look like here?',
-          why:"Strategy is excellent when it changes what you'd actually do, not just confirms what you thought.",
-          chips:['Challenges my current assumptions','Specific, not generic','Has a clear point of view','Commercially grounded','Leads directly to a decision'],
-          category:'Success criteria', answerKey:'successcriteria', parentStrategy:'destination' }
-    ]
-};
-
-
-/* ============================================================
-   SESSION STATE
-   ============================================================ */
-const session = {
-    seedIdea: '', destination: null,
-    answeredCount: 0, calibrationCount: 0,
-    started: false, awaitingDest: false,
-    editingNodeId: null, branchFromNodeId: null,
-    isChangingDest: false
-};
-document.getElementById('calibBar').classList.add('inactive');
-
+const session = { seedIdea: '', started: false, selectedNodeId: null };
 let nodes = [];
 let _nodeId = 0;
 const nextId = () => 'n' + (++_nodeId);
+let currentBranches = [];
 
-const answers = {
-    destination: null, audience: null, outcome: null,
-    format: null, tone: null, context: null,
-    constraints: null, successcriteria: null,
-    calibrations: []
-};
-
-let tooltipNodeId = null;
-let qualityScore   = 0;
-
-const arc = { stage: 0, direction: '', clarified: [], missing: [...INGREDIENTS], nextMove: '' };
-
+// Pan state
+let pan = { x: 0, y: 0 };
+let _panActive = false, _panMoved = false;
+let _dragStart = { x: 0, y: 0 }, _panStart = { x: 0, y: 0 };
 
 /* ============================================================
-   DESTINATION INFERENCE
+   API
    ============================================================ */
-function inferDestinationType(idea) {
-    const text = idea.toLowerCase();
-    let best = 'build', top = 0;
-    DESTINATIONS.forEach(d => {
-        const s = d.keywords.reduce((acc, kw) => acc + (text.includes(kw) ? 1 : 0), 0);
-        if (s > top) { top = s; best = d.id; }
-    });
-    return best;
+async function fetchBranches(nodeId, isRoot, extra) {
+    const node = nodes.find(n => n.id === nodeId);
+    try {
+        const res = await fetch('/api/branch', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+                seedIdea:        session.seedIdea,
+                parentLabel:     node?.label || session.seedIdea,
+                parentDimension: node?.dimId ? getDimLabel(node.dimId) : null,
+                mapContext:      buildMapContext(),
+                isRoot:          !!isRoot,
+                extra:           extra || null
+            })
+        });
+        if (!res.ok) throw new Error('API ' + res.status);
+        const data = await res.json();
+        return (data.branches || []).map(b => ({
+            label:       b.label || '',
+            description: b.description || '',
+            dimId:       normalizeDim(b.dimension || b.label || '')
+        }));
+    } catch (e) {
+        console.error('fetchBranches:', e);
+        showToast('API error — check your Vercel env var ANTHROPIC_API_KEY');
+        return [];
+    }
 }
 
+function buildMapContext() {
+    const lines = nodes
+        .filter(n => n.type !== 'central')
+        .map(n => (n.dimId ? `[${getDimLabel(n.dimId)}] ` : '') + n.label);
+    return lines.length ? lines.join('\n') : 'Just starting.';
+}
 
 /* ============================================================
    START SESSION
    ============================================================ */
-function startSession() {
+async function startSession() {
     const idea = document.getElementById('ideaTextarea').value.trim();
     if (!idea) { document.getElementById('ideaTextarea').focus(); return; }
 
     session.seedIdea = idea;
     session.started  = true;
-    session.awaitingDest = true;
 
+    document.getElementById('canvasEmpty').classList.add('hidden');
     document.getElementById('calibBar').classList.remove('inactive');
     document.getElementById('btnReset').classList.add('visible');
+    document.getElementById('arcSecIdea').classList.remove('hidden');
+    document.getElementById('arcEmptyNote').classList.add('hidden');
+    document.getElementById('arcIdeaText').textContent = idea;
 
-    createNode({ type:'central', category:'Seed idea', label:idea, parentId:null, x:0, y:0 });
-    document.getElementById('canvasEmpty').classList.add('hidden');
+    const root = createNode({ type: 'central', label: idea, dimId: null });
     renderMindMap();
-    showDestinationSelect(inferDestinationType(idea));
+    showLoadingPanel('Mapping the structure of your idea…');
 
-    arc.stage = 1;
-    arc.direction = `Starting with: "${trunc(idea, 65)}" — choosing the right prompt destination.`;
-    arc.nextMove  = 'Select what kind of output you want Claude to produce.';
-    updateArc(); renderArcStages(1, 0); setQuality(1);
+    const branches = await fetchBranches(root.id, true);
+    root.branches = branches;
+    showExplorePanel(root.id);
+    updateCoverage();
 }
 
-
 /* ============================================================
-   DESTINATION SELECT UI
+   EXPLORE PANEL
    ============================================================ */
-function showDestinationSelect(inferredId) {
+function showExplorePanel(nodeId) {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+
+    session.selectedNodeId = nodeId;
+
+    // Highlight on map
+    document.querySelectorAll('.node').forEach(el => el.classList.remove('node-active'));
+    const el = document.querySelector(`[data-nid="${nodeId}"]`);
+    if (el) el.classList.add('node-active');
+
+    // Header
+    const isRoot  = node.type === 'central';
+    const dimText = node.dimId ? getDimLabel(node.dimId) : (isRoot ? 'Your idea' : 'Branch');
+    const badge   = document.getElementById('exploreNodeDim');
+    badge.textContent = dimText;
+    badge.dataset.dim = node.dimId || '';
+    document.getElementById('exploreNodeLabel').textContent = node.label;
+    document.getElementById('btnBackRoot').classList.toggle('hidden', isRoot);
+
+    // Show panel
     document.getElementById('ideaWrap').classList.add('hidden');
-    document.getElementById('qHeader').classList.add('hidden');
-    document.getElementById('qBody').classList.add('hidden');
+    document.getElementById('loadingWrap').classList.add('hidden');
+    document.getElementById('exploreWrap').classList.remove('hidden');
 
-    const dest = DESTINATIONS.find(d => d.id === inferredId) || DESTINATIONS[0];
-    const wrap = document.getElementById('destWrap');
-    wrap.innerHTML = `
-        <div class="dest-idea-echo">"${esc(trunc(session.seedIdea, 90))}"</div>
-        <div class="dest-select-title">What should Claude produce?</div>
-        <div class="dest-select-sub">We detected: <strong>${esc(dest.label)}</strong>. Confirm or pick a different destination.</div>
-        <div class="dest-grid" id="destGrid">
-            ${DESTINATIONS.map(d => `
-                <button class="dest-card${d.id === inferredId ? ' selected' : ''}" data-dest="${d.id}"
-                        onclick="selectDestCard(this,'${d.id}')">
-                    <span class="dest-card-icon">${d.icon}</span>
-                    <span class="dest-card-name">${esc(d.label)}</span>
-                    <span class="dest-card-desc">${esc(d.desc)}</span>
-                </button>`).join('')}
-        </div>
-        <button class="btn-confirm-dest" onclick="confirmDestination()">Confirm destination →</button>`;
-    wrap.classList.remove('hidden');
-    wrap.classList.add('fade-in');
-    session.destination = inferredId;
+    // Left panel context
+    document.getElementById('arcSecFocus').classList.remove('hidden');
+    document.getElementById('arcFocusText').textContent =
+        (node.dimId ? '[' + getDimLabel(node.dimId) + '] ' : '') + node.label;
+
+    // Branches
+    if (node.branches) {
+        renderBranchCards(node.branches, nodeId);
+    } else {
+        loadBranchesForNode(nodeId, null);
+    }
 }
 
-function selectDestCard(el, id) {
-    document.querySelectorAll('.dest-card').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-    session.destination = id;
+async function loadBranchesForNode(nodeId, extra) {
+    document.getElementById('branchList').innerHTML =
+        '<div class="branch-loading"><div class="branch-spinner"></div><span>Generating…</span></div>';
+    const branches = await fetchBranches(nodeId, false, extra);
+    const node = nodes.find(n => n.id === nodeId);
+    if (node) node.branches = branches;
+    if (session.selectedNodeId === nodeId) renderBranchCards(branches, nodeId);
 }
 
-function confirmDestination() {
-    if (!session.destination) return;
-    if (session.isChangingDest) { confirmChangeDest(); return; }
-    const dest = DESTINATIONS.find(d => d.id === session.destination);
-    answers.destination = dest.label;
-    session.awaitingDest = false;
+function renderBranchCards(branches, nodeId) {
+    currentBranches = branches || [];
+    const list = document.getElementById('branchList');
+    if (!branches || branches.length === 0) {
+        list.innerHTML = '<div class="branch-loading" style="font-size:12px;">Nothing generated — try regenerating.</div>';
+        return;
+    }
+    list.innerHTML = branches.map((b, i) => {
+        const dimStyle = b.dimId ? dimCardStyle(b.dimId) : '';
+        const dimText  = b.dimId ? getDimLabel(b.dimId) : '';
+        return `<button class="branch-card" onclick="addBranch(${i})">
+            <div class="branch-card-label">${esc(b.label)}</div>
+            <div class="branch-card-desc">${esc(b.description)}</div>
+            ${dimText ? `<div class="branch-card-dim" style="${dimStyle}">${esc(dimText)}</div>` : ''}
+        </button>`;
+    }).join('');
+}
 
-    document.getElementById('destWrap').classList.add('hidden');
-    document.getElementById('destBadgeText').textContent = dest.label;
-    document.getElementById('destBadge').classList.remove('hidden');
+function dimCardStyle(dimId) {
+    const s = {
+        problem:      'background:var(--burgundy-light);color:var(--burgundy)',
+        user:         'background:var(--blue-grey-light);color:var(--blue-grey)',
+        bizmodel:     'background:var(--amber-light);color:var(--amber)',
+        distribution: 'background:var(--sage-light);color:var(--sage)',
+        moat:         'background:#f0edf8;color:#6b5a9e',
+        risk:         'background:#fdf0ee;color:#c05a48',
+        unexpected:   'background:#eef4f0;color:var(--sage)',
+    };
+    return s[dimId] || '';
+}
 
-    createNode({ type:'dest', category:'Destination', label:dest.label,
-                 parentId:nodes[0].id, siblingIndex:0, totalSiblings:1 });
+async function addBranch(idx) {
+    const branch = currentBranches[idx];
+    if (!branch || !session.selectedNodeId) return;
+
+    const parentId = session.selectedNodeId;
+    const sibs     = nodes.filter(n => n.parentId === parentId);
+    const newNode  = createNode({
+        type: 'answer', label: branch.label, dimId: branch.dimId || null,
+        parentId, siblingIndex: sibs.length, totalSiblings: sibs.length + 1, isNew: true
+    });
+
+    repositionSiblings(parentId);
+    resolveCollisions();
     renderMindMap();
-
-    arc.stage = 2;
-    arc.clarified = ['Destination: ' + dest.label];
-    arc.missing   = getMissingIngredients();
-    arc.direction = generateArcDirection();
-    arc.nextMove  = generateArcNextMove();
-    updateArc(); renderArcStages(2, 1); setQuality(2);
-    updateArcMini();
-
-    const first = getNextBestQuestion();
-    if (first) renderQuestion(first);
+    updateCoverage();
+    panToNode(newNode);
+    showExplorePanel(newNode.id);
 }
 
+function addCustomBranch() {
+    const val = document.getElementById('customBranchTa').value.trim();
+    if (!val || !session.selectedNodeId) return;
+    const parentId = session.selectedNodeId;
+    const sibs     = nodes.filter(n => n.parentId === parentId);
+    const newNode  = createNode({
+        type: 'answer', label: val, dimId: null,
+        parentId, siblingIndex: sibs.length, totalSiblings: sibs.length + 1, isNew: true
+    });
+    document.getElementById('customBranchTa').value = '';
+    repositionSiblings(parentId);
+    resolveCollisions();
+    renderMindMap();
+    updateCoverage();
+    panToNode(newNode);
+    showExplorePanel(newNode.id);
+}
+
+async function regenerateBranches() {
+    if (!session.selectedNodeId) return;
+    const node = nodes.find(n => n.id === session.selectedNodeId);
+    if (!node) return;
+    node.branches = null;
+    document.getElementById('branchList').innerHTML =
+        '<div class="branch-loading"><div class="branch-spinner"></div><span>Regenerating…</span></div>';
+    const branches = await fetchBranches(node.id, node.type === 'central');
+    node.branches = branches;
+    if (session.selectedNodeId === node.id) renderBranchCards(branches, node.id);
+}
+
+function goToRoot() {
+    const root = nodes.find(n => n.type === 'central');
+    if (root) showExplorePanel(root.id);
+}
 
 /* ============================================================
-   QUESTION ENGINE
+   EXPLORE ACTIONS
    ============================================================ */
-function getNextBestQuestion() {
-    const bank = QUESTION_BANKS[session.destination] || QUESTION_BANKS.build;
-    return bank.find(q => !answers[q.answerKey]) || null;
-}
+async function exploreAction(type) {
+    if (!session.started) return;
 
-function renderQuestion(q) {
-    const bank  = QUESTION_BANKS[session.destination] || QUESTION_BANKS.build;
-    const total = bank.length;
-    const idx   = bank.findIndex(bq => bq.id === q.id);
-    const pct   = idx >= 0 ? (idx / total) * 100 : 0;
-
-    document.getElementById('qProgressFill').style.width = pct + '%';
-    document.getElementById('qStep').textContent  = idx >= 0
-        ? `Question ${idx + 1} of ${total}` : 'Additional question';
-    document.getElementById('qText').textContent  = q.text;
-    document.getElementById('qWhy').textContent   = q.why;
-    document.getElementById('answerTa').value     = '';
-    document.getElementById('chipsList').innerHTML = q.chips.map(c =>
-        `<button class="chip" onclick="selectChip(this)"><span class="chip-dot"></span>${esc(c)}</button>`
-    ).join('');
-
-    document.getElementById('destWrap').classList.add('hidden');
-    document.getElementById('qHeader').classList.remove('hidden');
-    document.getElementById('qBody').classList.remove('hidden');
-}
-
-function selectChip(el) {
-    document.querySelectorAll('#chipsList .chip').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-    document.getElementById('answerTa').value = el.textContent.trim();
-}
-
-function handleAnswer() {
-    const val = document.getElementById('answerTa').value.trim();
-    if (!val) return;
-
-    const q = getNextBestQuestion();
-
-    // Editing existing node
-    if (session.editingNodeId) {
-        const node = nodes.find(n => n.id === session.editingNodeId);
-        if (node) {
-            node.label = val;
-            if (q) answers[q.answerKey] = val;
-        }
-        session.editingNodeId = null;
-        document.querySelectorAll('.node-editing').forEach(el => el.classList.remove('node-editing'));
-        renderMindMap();
-        const next = getNextBestQuestion();
-        if (next) renderQuestion(next); else showPromptReady();
+    if (type === 'missing') {
+        const missing = getMissingDimensions();
+        if (missing.length === 0) { showToast('All 7 dimensions covered — great structure!'); return; }
+        showToast('Still missing: ' + missing.slice(0, 3).map(d => d.label).join(', '));
+        updateArcSuggest(missing[0].label);
         return;
     }
 
-    // Store answer
-    if (q) answers[q.answerKey] = val;
-    session.answeredCount++;
+    if (!session.selectedNodeId) { showToast('Click a node first'); return; }
 
-    // Determine parent
-    let parentNode;
-    if (session.branchFromNodeId) {
-        parentNode = nodes.find(n => n.id === session.branchFromNodeId) || getParentNode(q ? q.parentStrategy : 'destination');
-        session.branchFromNodeId = null;
-    } else {
-        parentNode = getParentNode(q ? q.parentStrategy : 'destination');
-    }
+    const extras = {
+        unexpected: 'Focus on surprising, contrarian, or non-obvious angles that most people would completely miss.',
+        challenge:  'Focus on what could go wrong — hidden risks, flawed assumptions, reasons this direction might be fundamentally wrong.',
+        deepen:     'Go one concrete level deeper. Be specific and tactical, not strategic. What would an operator actually do next?',
+        zoom:       'Step back to the real underlying goal. What is the broader context that makes this node matter — or not?',
+    };
+    const msgs = {
+        unexpected: 'Finding surprising angles…',
+        challenge:  'Challenging this direction…',
+        deepen:     'Going deeper…',
+        zoom:       'Zooming out…',
+    };
 
-    const sibs = nodes.filter(n => n.parentId === parentNode.id);
-    createNode({
-        type:'answer', category: q ? q.category : 'Answer', label:val,
-        parentId: parentNode.id, siblingIndex: sibs.length, totalSiblings: sibs.length + 1,
-        answerKey: q ? q.answerKey : null, questionId: q ? q.id : null, isNew: true
-    });
-    repositionSiblings(parentNode.id);
-    renderMindMap();
-
-    // Arc + quality
-    if (q && val) {
-        const entry = `${q.category}: ${trunc(val, 30)}`;
-        if (!arc.clarified.includes(entry)) arc.clarified.push(entry);
-    }
-    const answeredN = Object.entries(answers)
-        .filter(([k, v]) => k !== 'calibrations' && v !== null).length;
-    arc.stage     = Math.min(9, 2 + answeredN);
-    arc.missing   = getMissingIngredients();
-    arc.direction = generateArcDirection();
-    arc.nextMove  = generateArcNextMove();
-    updateArc(); renderArcStages(arc.stage, arc.stage - 1);
-    setQuality(computeQualityScore());
-    updateArcMini();
-
-    // Next question
-    const next = getNextBestQuestion();
-    if (next) renderQuestion(next); else showPromptReady();
+    showToast(msgs[type] || 'Generating…');
+    const node = nodes.find(n => n.id === session.selectedNodeId);
+    if (!node) return;
+    node.branches = null;
+    document.getElementById('branchList').innerHTML =
+        `<div class="branch-loading"><div class="branch-spinner"></div><span>${msgs[type]}</span></div>`;
+    await loadBranchesForNode(session.selectedNodeId, extras[type]);
 }
-
-function notSure() {
-    const first = document.querySelector('#chipsList .chip');
-    if (first) first.click();
-}
-
-function skipQuestion() {
-    const q = getNextBestQuestion();
-    if (!q) { showPromptReady(); return; }
-    // Mark as skipped with empty string so it's considered answered
-    answers[q.answerKey] = '(skipped)';
-    session.answeredCount++;
-    const next = getNextBestQuestion();
-    if (next) renderQuestion(next); else showPromptReady();
-}
-
-function showPromptReady() {
-    document.getElementById('qStep').textContent = 'Prompt ready';
-    document.getElementById('qProgressFill').style.width = '100%';
-    document.getElementById('qText').textContent = 'You have answered enough questions. Generate your Claude prompt now, or keep refining.';
-    document.getElementById('qWhy').textContent  = '';
-    document.getElementById('chipsList').innerHTML = '';
-    document.getElementById('answerTa').value = '';
-    arc.stage = 9; arc.nextMove = 'Click Generate prompt — all key ingredients are in place.';
-    updateArc(); renderArcStages(9, 8); setQuality(5); updateArcMini();
-}
-
-function improvePrompt() {
-    closePromptDrawer();
-    const next = getNextBestQuestion();
-    if (next) {
-        renderQuestion(next);
-        showToast('One more question to sharpen the prompt');
-    } else {
-        applyAction('sharper');
-    }
-}
-
 
 /* ============================================================
-   PARENT NODE SELECTION
+   COVERAGE
    ============================================================ */
-function getParentNode(strategy) {
-    const byKey  = k => nodes.find(n => n.answerKey === k);
-    const destNd = nodes.find(n => n.type === 'dest') || nodes[0];
-    switch (strategy) {
-        case 'destination': return destNd;
-        case 'audience':    return byKey('audience')    || destNd;
-        case 'outcome':     return byKey('outcome')     || byKey('audience') || destNd;
-        case 'format':      return byKey('format')      || destNd;
-        case 'tone':        return byKey('tone')        || destNd;
-        case 'context':     return byKey('context')     || destNd;
-        case 'goal':        return byKey('outcome')     || destNd;
-        case 'what':        return destNd;
-        case 'feel':        return byKey('tone')        || destNd;
-        case 'subject':     return destNd;
-        case 'topic':       return destNd;
-        case 'decision':    return byKey('outcome')     || destNd;
-        case 'bluntness':   return byKey('outcome')     || destNd;
-        case 'question':    return byKey('context')     || destNd;
-        default:            return destNd;
-    }
+function updateCoverage() {
+    const coveredIds = new Set(nodes.filter(n => n.dimId).map(n => n.dimId));
+    const count = coveredIds.size;
+
+    document.getElementById('coverageState').textContent = count + ' of 7';
+    const pipOn = Math.round((count / 7) * 5);
+    document.querySelectorAll('.coverage-pip').forEach((p, i) => p.classList.toggle('on', i < pipOn));
+
+    document.getElementById('coverageDims').innerHTML = DIMENSIONS.map(d =>
+        `<div class="cov-dim ${coveredIds.has(d.id) ? 'covered' : ''}" onclick="focusDimension('${d.id}')">
+            <div class="cov-dot"></div>
+            <span class="cov-label">${d.label}</span>
+        </div>`
+    ).join('');
+
+    const missing = getMissingDimensions();
+    if (missing.length > 0 && session.started) updateArcSuggest(missing[0].label);
+    else document.getElementById('arcSecSuggest').classList.add('hidden');
 }
 
+function getMissingDimensions() {
+    const covered = new Set(nodes.filter(n => n.dimId).map(n => n.dimId));
+    return DIMENSIONS.filter(d => !covered.has(d.id));
+}
+
+function updateArcSuggest(label) {
+    document.getElementById('arcSecSuggest').classList.remove('hidden');
+    document.getElementById('arcSuggestText').textContent = label;
+}
+
+function focusDimension(dimId) {
+    const node = nodes.find(n => n.dimId === dimId);
+    if (node) showExplorePanel(node.id);
+    else showToast('No ' + getDimLabel(dimId) + ' nodes yet — explore that dimension');
+}
+
+/* ============================================================
+   EXPORT STRUCTURE
+   ============================================================ */
+function exportStructure() {
+    if (!session.started || nodes.length < 2) { showToast('Map something first'); return; }
+
+    const byDim = {};
+    DIMENSIONS.forEach(d => { byDim[d.id] = []; });
+    byDim['other'] = [];
+    nodes.filter(n => n.type !== 'central').forEach(n => {
+        const key = n.dimId && byDim[n.dimId] !== undefined ? n.dimId : 'other';
+        byDim[key].push(n);
+    });
+
+    let out = 'CONCEPT STRUCTURE\n' + session.seedIdea + '\n' + '─'.repeat(52) + '\n\n';
+    DIMENSIONS.forEach(d => {
+        if (!byDim[d.id] || byDim[d.id].length === 0) return;
+        out += d.label.toUpperCase() + '\n';
+        byDim[d.id].forEach(n => { out += '  · ' + n.label + '\n'; });
+        out += '\n';
+    });
+    if (byDim['other'].length > 0) {
+        out += 'OTHER\n';
+        byDim['other'].forEach(n => { out += '  · ' + n.label + '\n'; });
+        out += '\n';
+    }
+    const total = nodes.filter(n => n.type !== 'central').length;
+    const dims  = DIMENSIONS.filter(d => byDim[d.id] && byDim[d.id].length > 0).length;
+    out += '─'.repeat(52) + '\n' + total + ' nodes · ' + dims + ' of 7 dimensions';
+
+    document.getElementById('exportOutput').textContent = out;
+    document.getElementById('exportDrawerSub').textContent = total + ' nodes · ' + dims + ' of 7 dimensions explored';
+    document.getElementById('exportDrawer').classList.add('open');
+    showOverlay();
+}
+
+async function copyExport() {
+    try {
+        await navigator.clipboard.writeText(document.getElementById('exportOutput').textContent);
+        const btn = document.getElementById('btnCopyExport');
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 2200);
+    } catch(e) {}
+}
+
+function closeExportDrawer() {
+    document.getElementById('exportDrawer').classList.remove('open');
+    hideOverlay();
+}
+
+/* ============================================================
+   NODE TOOLTIP (right-click)
+   ============================================================ */
+let tooltipNodeId = null;
+
+function onNodeClick(ax, ay, node) {
+    hideNodeTooltip();
+    showExplorePanel(node.id);
+    panToNode(node, false);
+}
+
+function onNodeRightClick(e, ax, ay, node) {
+    e.preventDefault();
+    tooltipNodeId = node.id;
+    document.getElementById('ttCat').textContent = node.dimId ? getDimLabel(node.dimId) : 'Branch';
+    document.getElementById('ttVal').textContent  = node.label;
+    const tt  = document.getElementById('nodeTooltip');
+    const ttW = 220, ttH = 110;
+    const vw  = window.innerWidth, vh = window.innerHeight;
+    let left  = ax + 12, top = ay - 18;
+    if (left + ttW > vw - 12) left = ax - ttW - 12;
+    if (top  + ttH > vh - 80) top  = ay  - ttH;
+    tt.style.left = left + 'px'; tt.style.top = top + 'px';
+    tt.classList.add('visible');
+}
+
+function hideNodeTooltip() {
+    document.getElementById('nodeTooltip').classList.remove('visible');
+    tooltipNodeId = null;
+}
+
+function exploreFromTt() { const id = tooltipNodeId; hideNodeTooltip(); if (id) showExplorePanel(id); }
+
+function removeFromTt() {
+    const id = tooltipNodeId; hideNodeTooltip();
+    if (!id) return;
+    const node = nodes.find(n => n.id === id);
+    if (!node || node.type === 'central') { showToast("Can't remove the root node"); return; }
+    const parentId = node.parentId;
+    const toRemove = new Set();
+    function mark(nid) { toRemove.add(nid); nodes.filter(n => n.parentId === nid).forEach(c => mark(c.id)); }
+    mark(id);
+    nodes = nodes.filter(n => !toRemove.has(n.id));
+    if (parentId) repositionSiblings(parentId);
+    resolveCollisions();
+    renderMindMap();
+    updateCoverage();
+    if (toRemove.has(session.selectedNodeId)) {
+        const parent = nodes.find(n => n.id === parentId);
+        if (parent) showExplorePanel(parentId); else goToRoot();
+    }
+    showToast('Node removed');
+}
 
 /* ============================================================
    NODE CREATION + LAYOUT
    ============================================================ */
-function createNode({ type, category, label, parentId, siblingIndex=0, totalSiblings=1, x, y, answerKey=null, questionId=null, isNew=false }) {
+function createNode({ type, label, dimId = null, parentId = null, siblingIndex = 0, totalSiblings = 1, x, y, isNew = false }) {
     const id  = nextId();
-    const pos = (x !== undefined && y !== undefined) ? {x, y} : calcNodePos(parentId, siblingIndex, totalSiblings);
-    const node = { id, type, category, label, parentId, x:pos.x, y:pos.y, answerKey, questionId, isNew };
+    const pos = (x !== undefined && y !== undefined) ? { x, y } : calcNodePos(parentId, siblingIndex, totalSiblings);
+    const node = { id, type, label, dimId, parentId, x: pos.x, y: pos.y, isNew, branches: null };
     nodes.push(node);
     return node;
 }
 
+function getDepth(nodeId) {
+    let d = 0, cur = nodes.find(n => n.id === nodeId);
+    while (cur && cur.parentId) { d++; cur = nodes.find(n => n.id === cur.parentId); }
+    return d;
+}
+
 function calcNodePos(parentId, siblingIndex, totalSiblings) {
-    if (!parentId) return { x:0, y:0 };
+    if (!parentId) return { x: 0, y: 0 };
     const parent = nodes.find(n => n.id === parentId);
-    if (!parent) return { x:200, y:0 };
+    if (!parent) return { x: 240, y: 0 };
 
-    const DIST = 200;
+    const depth = getDepth(parentId);
+    const DIST  = depth === 0 ? 245 : depth === 1 ? 195 : 165;
 
-    if (!parent.parentId) {
-        // First level: distribute evenly in a circle, start from upper-right
-        const slots = Math.max(totalSiblings, 1);
-        const step  = (2 * Math.PI) / Math.max(slots, 5);
-        const angle = -Math.PI / 3 + siblingIndex * step;
-        return { x: parent.x + Math.cos(angle) * DIST, y: parent.y + Math.sin(angle) * DIST };
+    if (depth === 0) {
+        const slots = Math.max(totalSiblings, 5);
+        const step  = (2 * Math.PI) / slots;
+        const angle = -Math.PI / 2.2 + siblingIndex * step;
+        return { x: Math.cos(angle) * DIST, y: Math.sin(angle) * DIST };
     }
 
-    // Deeper: continue direction from grandparent → parent, fan siblings
     const gp   = nodes.find(n => n.id === parent.parentId);
     const base = gp ? Math.atan2(parent.y - gp.y, parent.x - gp.x) : 0;
-    const spread = Math.PI / 2.5;
+    const spread = totalSiblings <= 2 ? Math.PI / 3.5 :
+                   totalSiblings <= 4 ? Math.PI / 2.5 : Math.PI / 2.1;
     const offset = totalSiblings > 1 ? (siblingIndex / (totalSiblings - 1) - 0.5) * spread : 0;
     return {
-        x: parent.x + Math.cos(base + offset) * (DIST * 0.85),
-        y: parent.y + Math.sin(base + offset) * (DIST * 0.85)
+        x: parent.x + Math.cos(base + offset) * DIST,
+        y: parent.y + Math.sin(base + offset) * DIST
     };
 }
 
@@ -2033,21 +1290,41 @@ function repositionSiblings(parentId) {
     });
 }
 
+function resolveCollisions() {
+    const MIN = 108;
+    for (let iter = 0; iter < 8; iter++) {
+        let moved = false;
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                const a = nodes[i], b = nodes[j];
+                const dx = b.x - a.x, dy = b.y - a.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < MIN && dist > 0.5) {
+                    const push = (MIN - dist) / 2 + 2;
+                    const nx = dx / dist, ny = dy / dist;
+                    if (a.type !== 'central') { a.x -= nx * push; a.y -= ny * push; }
+                    if (b.type !== 'central') { b.x += nx * push; b.y += ny * push; }
+                    moved = true;
+                }
+            }
+        }
+        if (!moved) break;
+    }
+}
 
 /* ============================================================
-   RENDER MIND MAP
+   RENDER
    ============================================================ */
 function renderMindMap() {
     const container = document.getElementById('canvasNodes');
     const svg       = document.getElementById('canvasSvg');
     const canvas    = document.getElementById('canvasWrap');
-    const cx = canvas.offsetWidth  / 2;
-    const cy = canvas.offsetHeight / 2;
+    const cx = canvas.offsetWidth  / 2 + pan.x;
+    const cy = canvas.offsetHeight / 2 + pan.y;
 
     container.innerHTML = '';
     svg.innerHTML       = '';
 
-    // Lines
     nodes.forEach(node => {
         if (!node.parentId) return;
         const par = nodes.find(n => n.id === node.parentId);
@@ -2057,590 +1334,148 @@ function renderMindMap() {
         const mx = (x1 + x2) / 2;
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);
-        const cls = ['map-line','solid'];
-        if (node.type === 'dest')  cls.push('dest');
-        if (node.type === 'calib') cls.push('calib');
-        path.setAttribute('class', cls.join(' '));
+        path.setAttribute('class', `map-line solid${node.dimId ? ' dim-' + node.dimId : ''}`);
         svg.appendChild(path);
     });
 
-    // Nodes
     nodes.forEach(node => {
         const ax = cx + node.x, ay = cy + node.y;
         const el = document.createElement('div');
-        el.className = `node node-${node.type === 'central' ? 'central' : node.type === 'dest' ? 'dest' : node.type === 'calib' ? 'calib' : 'answer'}${node.isNew ? ' node-new' : ''}`;
-        el.dataset.nid = node.id;
-        el.style.left  = ax + 'px';
-        el.style.top   = ay + 'px';
-        el.onclick = e => { e.stopPropagation(); onNodeClick(ax, ay, node); };
+        const dimCls    = node.dimId ? ` node-dim-${node.dimId}` : '';
+        const activeCls = node.id === session.selectedNodeId ? ' node-active' : '';
+        el.className    = `node node-${node.type === 'central' ? 'central' : 'answer'}${dimCls}${activeCls}${node.isNew ? ' node-new' : ''}`;
+        el.dataset.nid  = node.id;
+        el.style.left   = ax + 'px';
+        el.style.top    = ay + 'px';
+        el.onclick       = e => { e.stopPropagation(); if (!_panMoved) onNodeClick(ax, ay, node); };
+        el.oncontextmenu = e => { e.stopPropagation(); onNodeRightClick(e, ax, ay, node); };
 
         if (node.type === 'central') {
             el.innerHTML = `<div class="node-inner"><div class="n-sub">Your idea</div><div class="n-label">${esc(trunc(node.label, 65))}</div></div>`;
         } else {
-            el.innerHTML = `<div class="node-inner"><div class="n-cat">${esc(node.category)}</div><div class="n-label">${esc(trunc(node.label, 42))}</div></div>`;
+            const cat = node.dimId ? getDimLabel(node.dimId) : '';
+            el.innerHTML = `<div class="node-inner">${cat ? `<div class="n-cat">${esc(cat)}</div>` : ''}<div class="n-label">${esc(trunc(node.label, 44))}</div></div>`;
         }
         container.appendChild(el);
-        node.isNew = false; // only animate once
+        node.isNew = false;
     });
 }
 
-let _rzTimer;
-window.addEventListener('resize', () => {
-    clearTimeout(_rzTimer);
-    _rzTimer = setTimeout(() => { if (nodes.length) renderMindMap(); }, 120);
+/* ============================================================
+   CANVAS PAN
+   ============================================================ */
+const _cw = document.getElementById('canvasWrap');
+
+_cw.addEventListener('mousedown', e => {
+    const t = e.target;
+    if (t === _cw || t.classList.contains('canvas-svg') || t.tagName === 'path' || t.tagName === 'svg') {
+        _panActive = true; _panMoved = false;
+        _dragStart = { x: e.clientX, y: e.clientY };
+        _panStart  = { x: pan.x, y: pan.y };
+        _cw.classList.add('panning');
+        e.preventDefault();
+    }
 });
-document.getElementById('canvasWrap').addEventListener('click', () => hideNodeTooltip());
+window.addEventListener('mousemove', e => {
+    if (!_panActive) return;
+    const dx = e.clientX - _dragStart.x, dy = e.clientY - _dragStart.y;
+    if (Math.abs(dx) + Math.abs(dy) > 3) _panMoved = true;
+    pan.x = _panStart.x + dx; pan.y = _panStart.y + dy;
+    renderMindMap();
+});
+window.addEventListener('mouseup', () => {
+    _panActive = false; _cw.classList.remove('panning');
+    setTimeout(() => { _panMoved = false; }, 50);
+});
 
+_cw.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+        _panActive = true; _panMoved = false;
+        _dragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        _panStart  = { x: pan.x, y: pan.y };
+    }
+}, { passive: true });
+_cw.addEventListener('touchmove', e => {
+    if (!_panActive || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - _dragStart.x;
+    const dy = e.touches[0].clientY - _dragStart.y;
+    if (Math.abs(dx) + Math.abs(dy) > 4) _panMoved = true;
+    pan.x = _panStart.x + dx; pan.y = _panStart.y + dy;
+    renderMindMap();
+}, { passive: true });
+_cw.addEventListener('touchend', () => {
+    _panActive = false; setTimeout(() => { _panMoved = false; }, 60);
+});
+
+_cw.addEventListener('click', () => hideNodeTooltip());
+window.addEventListener('resize', () => {
+    clearTimeout(window._rzTimer);
+    window._rzTimer = setTimeout(() => { if (nodes.length) renderMindMap(); }, 120);
+});
 
 /* ============================================================
-   NODE TOOLTIP
+   PAN TO NODE
    ============================================================ */
-function onNodeClick(ax, ay, node) {
-    tooltipNodeId = node.id;
-    document.getElementById('ttCat').textContent = node.category;
-    document.getElementById('ttVal').textContent = node.label;
-    const tt = document.getElementById('nodeTooltip');
-    const ttW = 224, ttH = 155;
-    const vw = window.innerWidth, vh = window.innerHeight;
-    let left = ax + 16, top = ay - 20;
-    if (left + ttW > vw - 16) left = ax - ttW - 16;
-    if (top  + ttH > vh - 80) top  = ay - ttH;
-    tt.style.left = left + 'px';
-    tt.style.top  = top  + 'px';
-    tt.classList.add('visible');
-}
-
-function hideNodeTooltip() {
-    document.getElementById('nodeTooltip').classList.remove('visible');
-    tooltipNodeId = null;
-}
-
-function editNodeTt() {
-    const node = nodes.find(n => n.id === tooltipNodeId);
-    hideNodeTooltip();
-    if (!node || !node.answerKey) return;
-    const bank = QUESTION_BANKS[session.destination] || [];
-    const q    = bank.find(bq => bq.answerKey === node.answerKey);
-    if (!q) return;
-    session.editingNodeId = node.id;
-    document.querySelectorAll('.node').forEach(el => el.classList.remove('node-editing'));
-    const el = document.querySelector(`[data-nid="${node.id}"]`);
-    if (el) el.classList.add('node-editing');
-    renderQuestion(q);
-    document.getElementById('answerTa').value = node.label;
-    document.getElementById('qText').textContent = 'Editing: ' + q.text;
-}
-
-function branchNodeTt() {
-    const node = nodes.find(n => n.id === tooltipNodeId);
-    hideNodeTooltip();
+function panToNode(node, animate) {
     if (!node) return;
-    session.branchFromNodeId = node.id;
-    const next = getNextBestQuestion();
-    if (next) renderQuestion(next); else showPromptReady();
-}
-
-function generateFromNode() { hideNodeTooltip(); generateFinalPrompt(); }
-
-
-/* ============================================================
-   ARC STAGE TRACK
-   ============================================================ */
-function renderArcStages(currentIdx = -1, doneUpTo = -1) {
-    const container = document.getElementById('arcStages');
-    container.innerHTML = '';
-    STAGE_NAMES.forEach((name, i) => {
-        const row   = document.createElement('div'); row.className = 'arc-stage-row';
-        const track = document.createElement('div'); track.className = 'arc-stage-track';
-        const dot   = document.createElement('div');
-        dot.className = 'arc-dot' + (i <= doneUpTo ? ' done' : i === currentIdx ? ' current' : '');
-        track.appendChild(dot);
-        if (i < STAGE_NAMES.length - 1) {
-            const conn = document.createElement('div');
-            conn.className = 'arc-connector' + (i < doneUpTo ? ' done' : '');
-            track.appendChild(conn);
-        }
-        const label = document.createElement('div');
-        label.className = 'arc-stage-text' + (i <= doneUpTo ? ' done' : i === currentIdx ? ' current' : '');
-        label.textContent = name;
-        row.appendChild(track); row.appendChild(label);
-        container.appendChild(row);
-    });
-}
-renderArcStages();
-
-
-/* ============================================================
-   ARC NARRATIVE  (Chunk 4)
-   ============================================================ */
-function generateArcDirection() {
-    const dest = DESTINATIONS.find(d => d.id === session.destination);
-    const dl   = dest ? dest.label.toLowerCase() : 'prompt';
-    const parts = [];
-
-    if (answers.audience && answers.outcome) {
-        parts.push(`Building a ${dl} for ${trunc(answers.audience, 30)} — goal: ${trunc(answers.outcome, 45)}.`);
-    } else if (answers.audience) {
-        parts.push(`Shaping a ${dl} for ${trunc(answers.audience, 40)}.`);
-    } else {
-        parts.push(`Shaping a ${dl} prompt.`);
-    }
-    if (answers.format)  parts.push(`Output: ${trunc(answers.format, 35)}.`);
-    if (answers.tone)    parts.push(`Feel: ${trunc(answers.tone, 30)}.`);
-    if (answers.constraints) parts.push(`Avoiding: ${trunc(answers.constraints, 35)}.`);
-
-    return parts.join(' ');
-}
-
-function generateArcNextMove() {
-    const missing  = getMissingIngredients();
-    if (missing.length === 0) return 'All key ingredients are in place — generate your Claude prompt now.';
-    const priority = ['Outcome','Format','Audience','Tone','Constraints','Success criteria','Context'];
-    const next     = priority.find(p => missing.includes(p)) || missing[0];
-    const moves = {
-        'Audience':          'Who is this for? Knowing the audience prevents generic outputs.',
-        'Outcome':           'Define the core outcome — what success looks like for the user.',
-        'Format':            'Specify the output format — the most underused prompt ingredient.',
-        'Tone':              'Add tone and style guidance to shape how Claude writes everything.',
-        'Constraints':       'Add constraints to prevent the most common failure modes.',
-        'Success criteria':  'Define what excellent output looks like — this raises the bar significantly.',
-        'Context':           'Add context so Claude has the full picture before it starts.'
-    };
-    return moves[next] || `Clarify: ${missing[0].toLowerCase()}.`;
-}
-
-function getMissingIngredients() {
-    return INGREDIENTS.filter(label => {
-        const key = label.toLowerCase().replace(/\s/g, '');
-        const val = answers[key];
-        return !val || val === '(skipped)';
-    });
-}
-
-function updateArc() {
-    const hasContent = !!arc.direction;
-    document.getElementById('arcEmptyNote').classList.toggle('hidden', hasContent);
-    setEl('arcSecDir',  !!arc.direction);
-    setEl('arcSecClar', arc.clarified.length > 0);
-    setEl('arcSecMiss', arc.missing.length  > 0);
-    setEl('arcSecNext', !!arc.nextMove);
-    if (arc.direction)         document.getElementById('arcDir').textContent  = arc.direction;
-    if (arc.clarified.length)  document.getElementById('arcClar').textContent = arc.clarified.join(' · ');
-    if (arc.missing.length) {
-        document.getElementById('arcMissTags').innerHTML =
-            arc.missing.map(m => `<span class="arc-tag missing">${esc(m)}</span>`).join('');
-    }
-    if (arc.nextMove) document.getElementById('arcNext').textContent = arc.nextMove;
-}
-
-function setEl(id, show) {
-    document.getElementById(id).classList.toggle('hidden', !show);
-}
-
-function updateArcMini() {
-    if (arc.direction) document.getElementById('arcMiniText').textContent = arc.direction;
-}
-
-
-/* ============================================================
-   QUALITY METER  (Chunk 4)
-   ============================================================ */
-function computeQualityScore() {
-    let s = 0;
-    if (session.seedIdea && session.seedIdea.length > 8) s++;
-    if (answers.destination)    s++;
-    if (answers.audience)       s++;
-    if (answers.outcome)        s++;
-    if (answers.format)         s++;
-    if (answers.tone)           s++;
-    if (answers.constraints)    s++;
-    if (answers.successcriteria) s++;
-    return Math.min(5, Math.round((s / 8) * 5));
-}
-
-function setQuality(score) {
-    qualityScore = Math.min(5, score);
-    document.querySelectorAll('.quality-pip').forEach((p, i) => {
-        p.classList.toggle('on', i < qualityScore);
-    });
-    document.getElementById('qualityState').textContent = QUALITY_LABELS[qualityScore];
-}
-setQuality(0);
-
-
-/* ============================================================
-   FINAL PROMPT GENERATION
-   ============================================================ */
-function generateFinalPrompt() {
-    const dest = DESTINATIONS.find(d => d.id === session.destination) || DESTINATIONS[0];
-    const idea = session.seedIdea || 'the described concept';
-    const aud  = (answers.audience && answers.audience !== '(skipped)') ? answers.audience : 'the intended audience';
-    const out  = (answers.outcome  && answers.outcome  !== '(skipped)') ? answers.outcome  : 'a high-quality, immediately useful result';
-    const fmt  = (answers.format   && answers.format   !== '(skipped)') ? answers.format   : 'structured, clearly labelled sections';
-    const tone = (answers.tone     && answers.tone     !== '(skipped)') ? answers.tone     : 'precise and professional';
-    const con  = (answers.constraints && answers.constraints !== '(skipped)') ? answers.constraints : 'avoid generic, template-like output';
-    const crit = (answers.successcriteria && answers.successcriteria !== '(skipped)') ? answers.successcriteria : 'feels like expert-level work; immediately actionable';
-    const ctx  = (answers.context  && answers.context  !== '(skipped)') ? answers.context  : '';
-
-    const roles = {
-        build:      'world-class product designer and full-stack engineer',
-        analyse:    'rigorous strategic analyst and critical thinker',
-        write:      'expert writer and content strategist',
-        design:     'senior visual designer and creative director',
-        research:   'thorough research analyst and expert synthesiser',
-        strategise: 'experienced strategist and commercial thinker'
-    };
-    const tasks = {
-        build:      `Build a complete, working prototype or full specification for: ${idea}.\n\nThe output should be self-contained, polished, and immediately usable — not a starting point for further work. Include all the detail Claude needs to produce something excellent.`,
-        analyse:    `Perform a rigorous, honest analysis of: ${idea}.\n\nBe direct, evidence-based, and commercially grounded. Do not produce a diplomatic non-answer — form a clear point of view and defend it.`,
-        write:      `Write high-quality, compelling content for: ${idea}.\n\nEvery sentence must earn its place. No filler, no hedging, no generic phrasing. Write as a real expert who cares about quality.`,
-        design:     `Produce a clear, opinionated design direction for: ${idea}.\n\nBe specific about visual language, layout principles, typography, colour palette, and spatial decisions. Do not be vague.`,
-        research:   `Research and synthesise the key findings on: ${idea}.\n\nPrioritise insight and relevance over comprehensiveness. Synthesise — do not merely compile. Highlight what is known, what is uncertain, and what matters most.`,
-        strategise: `Develop a clear, actionable strategy for: ${idea}.\n\nBe bold, specific, and commercially grounded. Do not produce a generic framework — produce a real recommendation you would stake your reputation on.`
-    };
-
-    const ctxBlock = [
-        `This is for: ${aud}.`,
-        `The core goal is: ${out}.`,
-        ctx ? `Additional context: ${ctx}.` : ''
-    ].filter(Boolean).join('\n');
-
-    const calibBlock = answers.calibrations.length
-        ? '\n\nCALIBRATION NOTES\n' + answers.calibrations.map(c => `— ${c.text}`).join('\n')
-        : '';
-
-    const prompt = [
-        `ROLE\nYou are a ${roles[dest.id] || roles.build}.`,
-        `CONTEXT\n${ctxBlock}`,
-        `TASK\n${tasks[dest.id] || tasks.build}`,
-        `OUTPUT FORMAT\n${fmt}`,
-        `TONE & STYLE\n${tone}`,
-        `CONSTRAINTS\n${con}${calibBlock}`,
-        `SUCCESS CRITERIA\n${crit}`,
-        `FINAL INSTRUCTION\nDo not produce generic, templated output. Everything you produce should feel like it was created specifically for this brief by a genuine expert. Be concrete, be specific, and be immediately useful. If anything in this brief is ambiguous, make an intelligent assumption and state it — do not ask clarifying questions.`
-    ].join('\n\n');
-
-    document.getElementById('promptOutput').textContent = prompt;
-    document.getElementById('drawerSub').textContent =
-        `${session.answeredCount + 1} inputs · ${dest.label} · ${QUALITY_LABELS[qualityScore]}`;
-    document.getElementById('promptDrawer').classList.add('open');
-    showOverlay();
-}
-
-function closePromptDrawer() {
-    document.getElementById('promptDrawer').classList.remove('open');
-    hideOverlay();
-}
-
-async function copyPrompt() {
-    const text = document.getElementById('promptOutput').textContent;
-    try {
-        await navigator.clipboard.writeText(text);
-        const btn = document.getElementById('btnCopy');
-        btn.textContent = '✓  Copied!';
-        setTimeout(() => {
-            btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 8V2C2 1.44772 2.44772 1 3 1H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Copy prompt`;
-        }, 2200);
-    } catch(e) { console.warn('Copy failed', e); }
-}
-
-
-/* ============================================================
-   CALIBRATION ACTIONS  (Chunk 5 will deepen these)
-   ============================================================ */
-let _calibType = 'steer';
-
-function openCalibModal(type) {
-    if (!session.started) return;
-    _calibType = type;
-    const title = document.getElementById('calibModalTitle');
-    const ta    = document.getElementById('calibModalTa');
-    title.textContent = type === 'steer' ? 'Steer the direction' : 'Add your own direction';
-    ta.placeholder    = type === 'steer'
-        ? 'e.g. This is too functional — I want it more emotionally compelling and brand-led.'
-        : 'e.g. Focus on the onboarding experience before anything else.';
-    ta.value = '';
-    document.getElementById('calibModal').classList.add('open');
-    showOverlay();
-    setTimeout(() => ta.focus(), 80);
-}
-
-function closeCalibModal() {
-    document.getElementById('calibModal').classList.remove('open');
-    hideOverlay();
-}
-
-function applyCustomCalib() {
-    const text = document.getElementById('calibModalTa').value.trim();
-    if (!text) return;
-    answers.calibrations.push({ type: _calibType, text });
-    session.calibrationCount++;
-    closeCalibModal();
-
-    // Create calibration node attached to most recent non-central node
-    const parentNode = [...nodes].reverse().find(n => n.type !== 'central') || nodes[0];
-    const sibs = nodes.filter(n => n.parentId === parentNode.id);
-    createNode({
-        type:'calib', category:'Calibration', label: trunc(text, 40),
-        parentId: parentNode.id, siblingIndex: sibs.length, totalSiblings: sibs.length + 1, isNew: true
-    });
-    repositionSiblings(parentNode.id);
+    const canvas = document.getElementById('canvasWrap');
+    pan.x = -node.x + canvas.offsetWidth  * 0.05;
+    pan.y = -node.y + canvas.offsetHeight * 0.05;
     renderMindMap();
-
-    // Steer: show a follow-up direction question
-    if (_calibType === 'steer') {
-        renderQuestion({
-            id: 'steer_follow', isExtra: true,
-            text: 'Given this new direction — what matters most now?',
-            why: `Calibration applied: "${trunc(text, 60)}"`,
-            chips: ['The emotional quality it should have','The specific output format needed','Who this is really for','What success now looks like','The constraint that matters most'],
-            category:'Steered', answerKey:'context', parentStrategy:'destination'
-        });
-    } else {
-        const next = getNextBestQuestion();
-        if (next) renderQuestion(next); else showPromptReady();
-    }
-
-    arc.clarified.push('Calibration: ' + trunc(text, 35));
-    arc.direction = generateArcDirection() + ` [Calibrated]`;
-    updateArc(); updateArcMini();
 }
-
-function applyAction(type) {
-    if (!session.started) return;
-    const bank = QUESTION_BANKS[session.destination] || QUESTION_BANKS.build;
-    let question = null;
-    let calibText = '';
-
-    switch (type) {
-        case 'deeper': {
-            const recentNode = [...nodes].reverse().find(n => n.answerKey);
-            if (recentNode) {
-                const recentQ = bank.find(q => q.answerKey === recentNode.answerKey);
-                if (recentQ) {
-                    question = {
-                        id: 'deeper_' + recentQ.id,
-                        text: `You said "${trunc(recentNode.label, 38)}" — what's underneath that?`,
-                        why: 'Going one level deeper on a key ingredient often reveals the real constraint or opportunity.',
-                        chips: [
-                            'The specific context that makes this unique',
-                            'The constraint nobody has mentioned yet',
-                            'What has already been tried',
-                            'The edge case that changes everything',
-                            'What success feels like, not just looks like'
-                        ],
-                        category: 'Depth', answerKey: recentQ.answerKey, parentStrategy: recentQ.parentStrategy
-                    };
-                    calibText = 'Go deeper: ' + recentQ.category;
-                }
-            }
-            if (!question) {
-                question = {
-                    id: 'deeper_gen',
-                    text: 'What is the one detail that would make or break this?',
-                    why: 'The critical detail is often the last thing mentioned.',
-                    chips: ['A specific technical constraint','The timeline or deadline pressure','The budget or scope','An existing system to integrate with','The main reason previous attempts failed'],
-                    category: 'Depth', answerKey: 'constraints', parentStrategy: 'destination'
-                };
-                calibText = 'Go deeper';
-            }
-            break;
-        }
-        case 'zoom': {
-            question = {
-                id: 'zoom',
-                text: 'Step back — what is the real goal behind this?',
-                why: 'Zooming out prevents over-engineering and realigns the prompt with the actual objective.',
-                chips: ['Solve a recurring problem once and for all','Help a team work more effectively','Create something I can show to stakeholders','Test a hypothesis quickly','Reduce cognitive load for the user'],
-                category: 'Real goal', answerKey: 'outcome', parentStrategy: 'destination'
-            };
-            calibText = 'Zooming out to real goal';
-            break;
-        }
-        case 'challenge': {
-            question = {
-                id: 'challenge',
-                text: 'What assumption are we making that could be wrong?',
-                why: 'Challenging assumptions prevents Claude from optimising for the wrong problem.',
-                chips: ['The audience actually wants this','This format is the right one','The stated outcome is the real outcome','These constraints are fixed, not flexible','This is the right destination type for this idea'],
-                category: 'Assumption check', answerKey: 'context', parentStrategy: 'destination'
-            };
-            calibText = 'Challenging assumptions';
-            break;
-        }
-        case 'missing': {
-            const miss = getMissingIngredients();
-            if (miss.length === 0) { showToast('All key ingredients are in place — generate your prompt.'); return; }
-            const priority = ['Outcome','Format','Audience','Tone','Constraints','Success criteria','Context'];
-            const nextMiss = priority.find(p => miss.includes(p)) || miss[0];
-            const q = bank.find(bq => bq.category === nextMiss);
-            if (q) { question = q; calibText = 'Finding missing: ' + nextMiss; }
-            else { showToast('No missing ingredients found.'); return; }
-            break;
-        }
-        case 'sharper': {
-            question = {
-                id: 'sharper',
-                text: 'What would make the output feel truly excellent, not just acceptable?',
-                why: 'Sharpening closes the gap between adequate and expert-level output.',
-                chips: ['A concrete example of the quality level expected','Specific language style or vocabulary','A reference or benchmark to aim for','What the output must never do','The one thing that would delight the user'],
-                category: 'Excellence bar', answerKey: 'successcriteria', parentStrategy: 'destination'
-            };
-            calibText = 'Sharpening to excellent';
-            break;
-        }
-        case 'branch': {
-            const recent = [...nodes].reverse().find(n => n.type === 'answer');
-            if (recent) {
-                session.branchFromNodeId = recent.id;
-                // Visually highlight the branched-from node briefly
-                const el = document.querySelector(`[data-nid="${recent.id}"]`);
-                if (el) { el.classList.add('node-editing'); setTimeout(() => el.classList.remove('node-editing'), 1400); }
-            }
-            const next = getNextBestQuestion();
-            if (next) { renderQuestion(next); showToast('Branching from last answer'); }
-            else { showPromptReady(); }
-            return;
-        }
-    }
-
-    if (!question) return;
-
-    // Create calibration node on the map
-    const anchorNode = [...nodes].reverse().find(n => n.type !== 'central') || nodes[0];
-    const sibs = nodes.filter(n => n.parentId === anchorNode.id);
-    createNode({
-        type: 'calib', category: 'Calibration', label: calibText,
-        parentId: anchorNode.id, siblingIndex: sibs.length, totalSiblings: sibs.length + 1, isNew: true
-    });
-    repositionSiblings(anchorNode.id);
-    renderMindMap();
-
-    // Record calibration
-    answers.calibrations.push({ type, text: calibText });
-    session.calibrationCount++;
-
-    // Update arc
-    if (!arc.clarified.includes(calibText)) arc.clarified.push(calibText);
-    arc.direction = generateArcDirection();
-    updateArc(); updateArcMini();
-
-    renderQuestion(question);
-    showToast(calibText);
-}
-
-function openChangeDestination() {
-    if (!session.started) return;
-    session.isChangingDest = true;
-    showDestinationSelect(session.destination || 'build');
-}
-
-function confirmChangeDest() {
-    session.isChangingDest = false;
-    const dest = DESTINATIONS.find(d => d.id === session.destination);
-    if (!dest) return;
-
-    const prevDest = answers.destination;
-    answers.destination = dest.label;
-
-    // Update dest node label in place
-    const destNode = nodes.find(n => n.type === 'dest');
-    if (destNode) destNode.label = dest.label;
-
-    // Update top-bar badge
-    document.getElementById('destBadgeText').textContent = dest.label;
-
-    // Close dest picker, restore question panel
-    document.getElementById('destWrap').classList.add('hidden');
-    document.getElementById('qHeader').classList.remove('hidden');
-    document.getElementById('qBody').classList.remove('hidden');
-
-    // Only add calib node if destination actually changed
-    if (prevDest !== dest.label) {
-        const calibText = 'Destination → ' + dest.label;
-        const anchorNode = destNode || nodes[0];
-        const sibs = nodes.filter(n => n.parentId === anchorNode.id);
-        createNode({
-            type: 'calib', category: 'Destination change', label: dest.label,
-            parentId: anchorNode.id, siblingIndex: sibs.length, totalSiblings: sibs.length + 1, isNew: true
-        });
-        repositionSiblings(anchorNode.id);
-        answers.calibrations.push({ type: 'changeDest', text: calibText });
-        session.calibrationCount++;
-        arc.clarified.push(calibText);
-        showToast('Destination changed to ' + dest.label);
-    }
-
-    renderMindMap();
-    arc.direction = generateArcDirection();
-    updateArc(); updateArcMini();
-
-    const next = getNextBestQuestion();
-    if (next) renderQuestion(next); else showPromptReady();
-}
-
 
 /* ============================================================
-   TOAST  (Chunk 5)
+   UI HELPERS
    ============================================================ */
+function showLoadingPanel(msg) {
+    document.getElementById('ideaWrap').classList.add('hidden');
+    document.getElementById('exploreWrap').classList.add('hidden');
+    document.getElementById('loadingWrap').classList.remove('hidden');
+    document.getElementById('loadingMsg').textContent = msg || 'Thinking…';
+}
+
+function toggleArcPanel() {
+    const panel = document.getElementById('arcPanel');
+    const mini  = document.getElementById('arcMini');
+    panel.classList.toggle('collapsed');
+    mini.classList.toggle('visible', panel.classList.contains('collapsed'));
+}
+
+function showOverlay()  { document.getElementById('overlay').classList.add('on'); }
+function hideOverlay()  { document.getElementById('overlay').classList.remove('on'); }
+function closeAll()     { closeExportDrawer(); hideNodeTooltip(); }
+
 let _toastTimer;
 function showToast(msg) {
     const el = document.getElementById('toast');
-    el.textContent = msg;
-    el.classList.add('show');
+    el.textContent = msg; el.classList.add('show');
     clearTimeout(_toastTimer);
-    _toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+    _toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
 }
 
-
-/* ============================================================
-   RESET SESSION  (Chunk 5)
-   ============================================================ */
 function resetSession() {
     if (!session.started) return;
-    if (confirm('Start a new PromptMap session? This will clear your current map.')) {
-        location.reload();
-    }
+    if (confirm('Start over? Your current map will be cleared.')) location.reload();
 }
 
-
-/* ============================================================
-   ARC PANEL TOGGLE
-   ============================================================ */
-let arcCollapsed = false;
-function toggleArcPanel() {
-    arcCollapsed = !arcCollapsed;
-    document.getElementById('arcPanel').classList.toggle('collapsed', arcCollapsed);
-    document.getElementById('arcMini').classList.toggle('visible', arcCollapsed);
-}
-
-
-/* ============================================================
-   OVERLAY + CLOSE ALL
-   ============================================================ */
-function showOverlay() { document.getElementById('overlay').classList.add('on'); }
-function hideOverlay()  { document.getElementById('overlay').classList.remove('on'); }
-function closeAll() { closeCalibModal(); closePromptDrawer(); hideNodeTooltip(); }
-
-
-/* ============================================================
-   EXAMPLE CHIPS
-   ============================================================ */
 function useExample(el) {
-    document.getElementById('ideaTextarea').value = el.textContent;
+    document.getElementById('ideaTextarea').value = el.textContent.trim();
     document.getElementById('ideaTextarea').focus();
 }
 
+/* ============================================================
+   UTILS
+   ============================================================ */
+function trunc(s, n) { return s && s.length > n ? s.slice(0, n).trimEnd() + '…' : (s || ''); }
+function esc(s) { return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 /* ============================================================
-   UTILITIES
+   INIT
    ============================================================ */
-function trunc(str, len) {
-    return str && str.length > len ? str.slice(0, len).trimEnd() + '…' : (str || '');
-}
-function esc(str) {
-    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+updateCoverage();
+document.getElementById('ideaTextarea').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) startSession();
+});
 
 </script>
 </body>
