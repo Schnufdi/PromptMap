@@ -1123,6 +1123,35 @@ textarea, input { font-family: var(--font-body); }
     .calib-bar { padding: 0 10px; gap: 4px; }
 }
 
+/* ---- Toast ---- */
+.toast {
+    position:fixed; bottom:80px; right:24px; z-index:9999;
+    background:var(--text-primary); color:var(--bg-primary);
+    font-size:12px; font-weight:500; letter-spacing:0.015em;
+    padding:9px 14px 9px 12px; border-radius:8px;
+    opacity:0; transform:translateY(8px);
+    transition:opacity 0.18s ease, transform 0.18s ease;
+    pointer-events:none; max-width:280px; line-height:1.4;
+}
+.toast.show { opacity:1; transform:translateY(0); }
+
+/* ---- Reset button ---- */
+.btn-reset {
+    font-size:11px; font-family:inherit; font-weight:500;
+    color:var(--text-muted); background:none; border:none;
+    cursor:pointer; padding:4px 8px; border-radius:5px;
+    opacity:0; pointer-events:none;
+    transition:opacity 0.25s, background 0.15s, color 0.15s;
+    white-space:nowrap;
+}
+.btn-reset.visible { opacity:1; pointer-events:all; }
+.btn-reset:hover { background:var(--bg-surface); color:var(--text-secondary); }
+
+/* ---- Calib bar locked state ---- */
+.calib-bar.inactive .calib-btn:not(.primary) {
+    opacity:0.28; pointer-events:none;
+}
+
     </style>
 </head>
 <body>
@@ -1151,6 +1180,8 @@ textarea, input { font-family: var(--font-body); }
             </div>
             <span class="logo-name">PromptMap</span>
         </a>
+
+        <button class="btn-reset" id="btnReset" onclick="resetSession()" title="Start a new session">↺ Start over</button>
 
         <div class="top-bar-sep"></div>
 
@@ -1431,8 +1462,10 @@ textarea, input { font-family: var(--font-body); }
 </div>
 
 
+<div class="toast" id="toast"></div>
+
 <!-- ====================================================
-     JAVASCRIPT — Chunks 2 · 3 · 4
+     JAVASCRIPT — Chunks 2 · 3 · 4 · 5
 ==================================================== -->
 <script>
 'use strict';
@@ -1668,8 +1701,10 @@ const session = {
     seedIdea: '', destination: null,
     answeredCount: 0, calibrationCount: 0,
     started: false, awaitingDest: false,
-    editingNodeId: null, branchFromNodeId: null
+    editingNodeId: null, branchFromNodeId: null,
+    isChangingDest: false
 };
+document.getElementById('calibBar').classList.add('inactive');
 
 let nodes = [];
 let _nodeId = 0;
@@ -1712,6 +1747,9 @@ function startSession() {
     session.seedIdea = idea;
     session.started  = true;
     session.awaitingDest = true;
+
+    document.getElementById('calibBar').classList.remove('inactive');
+    document.getElementById('btnReset').classList.add('visible');
 
     createNode({ type:'central', category:'Seed idea', label:idea, parentId:null, x:0, y:0 });
     document.getElementById('canvasEmpty').classList.add('hidden');
@@ -1762,6 +1800,7 @@ function selectDestCard(el, id) {
 
 function confirmDestination() {
     if (!session.destination) return;
+    if (session.isChangingDest) { confirmChangeDest(); return; }
     const dest = DESTINATIONS.find(d => d.id === session.destination);
     answers.destination = dest.label;
     session.awaitingDest = false;
@@ -1911,7 +1950,16 @@ function showPromptReady() {
     updateArc(); renderArcStages(9, 8); setQuality(5); updateArcMini();
 }
 
-function improvePrompt() { closePromptDrawer(); }
+function improvePrompt() {
+    closePromptDrawer();
+    const next = getNextBestQuestion();
+    if (next) {
+        renderQuestion(next);
+        showToast('One more question to sharpen the prompt');
+    } else {
+        applyAction('sharper');
+    }
+}
 
 
 /* ============================================================
@@ -2361,52 +2409,198 @@ function applyCustomCalib() {
 function applyAction(type) {
     if (!session.started) return;
     const bank = QUESTION_BANKS[session.destination] || QUESTION_BANKS.build;
+    let question = null;
+    let calibText = '';
+
     switch (type) {
         case 'deeper': {
-            const next = getNextBestQuestion();
-            if (next) renderQuestion(next); else showPromptReady();
+            const recentNode = [...nodes].reverse().find(n => n.answerKey);
+            if (recentNode) {
+                const recentQ = bank.find(q => q.answerKey === recentNode.answerKey);
+                if (recentQ) {
+                    question = {
+                        id: 'deeper_' + recentQ.id,
+                        text: `You said "${trunc(recentNode.label, 38)}" — what's underneath that?`,
+                        why: 'Going one level deeper on a key ingredient often reveals the real constraint or opportunity.',
+                        chips: [
+                            'The specific context that makes this unique',
+                            'The constraint nobody has mentioned yet',
+                            'What has already been tried',
+                            'The edge case that changes everything',
+                            'What success feels like, not just looks like'
+                        ],
+                        category: 'Depth', answerKey: recentQ.answerKey, parentStrategy: recentQ.parentStrategy
+                    };
+                    calibText = 'Go deeper: ' + recentQ.category;
+                }
+            }
+            if (!question) {
+                question = {
+                    id: 'deeper_gen',
+                    text: 'What is the one detail that would make or break this?',
+                    why: 'The critical detail is often the last thing mentioned.',
+                    chips: ['A specific technical constraint','The timeline or deadline pressure','The budget or scope','An existing system to integrate with','The main reason previous attempts failed'],
+                    category: 'Depth', answerKey: 'constraints', parentStrategy: 'destination'
+                };
+                calibText = 'Go deeper';
+            }
             break;
         }
         case 'zoom': {
-            renderQuestion({ id:'zoom', text:'Step back — what is the real goal here?',
-                why:'Zooming out prevents over-engineering and keeps the prompt aligned with the actual objective.',
-                chips:['The core problem to solve','The outcome that matters most','What success looks like later','The simplest version that works','What is NOT needed here'],
-                category:'Recalibration', answerKey:'outcome', parentStrategy:'destination' });
+            question = {
+                id: 'zoom',
+                text: 'Step back — what is the real goal behind this?',
+                why: 'Zooming out prevents over-engineering and realigns the prompt with the actual objective.',
+                chips: ['Solve a recurring problem once and for all','Help a team work more effectively','Create something I can show to stakeholders','Test a hypothesis quickly','Reduce cognitive load for the user'],
+                category: 'Real goal', answerKey: 'outcome', parentStrategy: 'destination'
+            };
+            calibText = 'Zooming out to real goal';
             break;
         }
         case 'challenge': {
-            renderQuestion({ id:'challenge', text:'What assumptions might we be making that could be wrong?',
-                why:'Challenging assumptions prevents Claude from optimising for the wrong problem.',
-                chips:['The audience actually wants this','This format is the right one','The defined outcome is achievable','The constraints are the real ones','This is the right destination type'],
-                category:'Recalibration', answerKey:'context', parentStrategy:'destination' });
+            question = {
+                id: 'challenge',
+                text: 'What assumption are we making that could be wrong?',
+                why: 'Challenging assumptions prevents Claude from optimising for the wrong problem.',
+                chips: ['The audience actually wants this','This format is the right one','The stated outcome is the real outcome','These constraints are fixed, not flexible','This is the right destination type for this idea'],
+                category: 'Assumption check', answerKey: 'context', parentStrategy: 'destination'
+            };
+            calibText = 'Challenging assumptions';
             break;
         }
         case 'missing': {
             const miss = getMissingIngredients();
-            const q    = bank.find(bq => miss.includes(bq.category));
-            if (q) renderQuestion(q); else showPromptReady();
+            if (miss.length === 0) { showToast('All key ingredients are in place — generate your prompt.'); return; }
+            const priority = ['Outcome','Format','Audience','Tone','Constraints','Success criteria','Context'];
+            const nextMiss = priority.find(p => miss.includes(p)) || miss[0];
+            const q = bank.find(bq => bq.category === nextMiss);
+            if (q) { question = q; calibText = 'Finding missing: ' + nextMiss; }
+            else { showToast('No missing ingredients found.'); return; }
             break;
         }
         case 'sharper': {
-            renderQuestion({ id:'sharper', text:'If the prompt produced mediocre output, what would be missing?',
-                why:'Sharpening means closing the gap between acceptable and excellent.',
-                chips:['More specific context about the situation','Clearer constraints on what to avoid','A higher success bar','More precise audience definition','A concrete example or reference'],
-                category:'Sharpening', answerKey:'successcriteria', parentStrategy:'destination' });
+            question = {
+                id: 'sharper',
+                text: 'What would make the output feel truly excellent, not just acceptable?',
+                why: 'Sharpening closes the gap between adequate and expert-level output.',
+                chips: ['A concrete example of the quality level expected','Specific language style or vocabulary','A reference or benchmark to aim for','What the output must never do','The one thing that would delight the user'],
+                category: 'Excellence bar', answerKey: 'successcriteria', parentStrategy: 'destination'
+            };
+            calibText = 'Sharpening to excellent';
             break;
         }
         case 'branch': {
             const recent = [...nodes].reverse().find(n => n.type === 'answer');
-            if (recent) { session.branchFromNodeId = recent.id; }
+            if (recent) {
+                session.branchFromNodeId = recent.id;
+                // Visually highlight the branched-from node briefly
+                const el = document.querySelector(`[data-nid="${recent.id}"]`);
+                if (el) { el.classList.add('node-editing'); setTimeout(() => el.classList.remove('node-editing'), 1400); }
+            }
             const next = getNextBestQuestion();
-            if (next) renderQuestion(next); else showPromptReady();
-            break;
+            if (next) { renderQuestion(next); showToast('Branching from last answer'); }
+            else { showPromptReady(); }
+            return;
         }
     }
+
+    if (!question) return;
+
+    // Create calibration node on the map
+    const anchorNode = [...nodes].reverse().find(n => n.type !== 'central') || nodes[0];
+    const sibs = nodes.filter(n => n.parentId === anchorNode.id);
+    createNode({
+        type: 'calib', category: 'Calibration', label: calibText,
+        parentId: anchorNode.id, siblingIndex: sibs.length, totalSiblings: sibs.length + 1, isNew: true
+    });
+    repositionSiblings(anchorNode.id);
+    renderMindMap();
+
+    // Record calibration
+    answers.calibrations.push({ type, text: calibText });
+    session.calibrationCount++;
+
+    // Update arc
+    if (!arc.clarified.includes(calibText)) arc.clarified.push(calibText);
+    arc.direction = generateArcDirection();
+    updateArc(); updateArcMini();
+
+    renderQuestion(question);
+    showToast(calibText);
 }
 
 function openChangeDestination() {
     if (!session.started) return;
+    session.isChangingDest = true;
     showDestinationSelect(session.destination || 'build');
+}
+
+function confirmChangeDest() {
+    session.isChangingDest = false;
+    const dest = DESTINATIONS.find(d => d.id === session.destination);
+    if (!dest) return;
+
+    const prevDest = answers.destination;
+    answers.destination = dest.label;
+
+    // Update dest node label in place
+    const destNode = nodes.find(n => n.type === 'dest');
+    if (destNode) destNode.label = dest.label;
+
+    // Update top-bar badge
+    document.getElementById('destBadgeText').textContent = dest.label;
+
+    // Close dest picker, restore question panel
+    document.getElementById('destWrap').classList.add('hidden');
+    document.getElementById('qHeader').classList.remove('hidden');
+    document.getElementById('qBody').classList.remove('hidden');
+
+    // Only add calib node if destination actually changed
+    if (prevDest !== dest.label) {
+        const calibText = 'Destination → ' + dest.label;
+        const anchorNode = destNode || nodes[0];
+        const sibs = nodes.filter(n => n.parentId === anchorNode.id);
+        createNode({
+            type: 'calib', category: 'Destination change', label: dest.label,
+            parentId: anchorNode.id, siblingIndex: sibs.length, totalSiblings: sibs.length + 1, isNew: true
+        });
+        repositionSiblings(anchorNode.id);
+        answers.calibrations.push({ type: 'changeDest', text: calibText });
+        session.calibrationCount++;
+        arc.clarified.push(calibText);
+        showToast('Destination changed to ' + dest.label);
+    }
+
+    renderMindMap();
+    arc.direction = generateArcDirection();
+    updateArc(); updateArcMini();
+
+    const next = getNextBestQuestion();
+    if (next) renderQuestion(next); else showPromptReady();
+}
+
+
+/* ============================================================
+   TOAST  (Chunk 5)
+   ============================================================ */
+let _toastTimer;
+function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+
+/* ============================================================
+   RESET SESSION  (Chunk 5)
+   ============================================================ */
+function resetSession() {
+    if (!session.started) return;
+    if (confirm('Start a new PromptMap session? This will clear your current map.')) {
+        location.reload();
+    }
 }
 
 
