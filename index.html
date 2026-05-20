@@ -210,6 +210,7 @@ textarea, input { font-family: var(--font-body); }
     background-size: 26px 26px; cursor: grab;
 }
 .canvas-wrap.panning { cursor: grabbing; }
+#mapTransform { position: absolute; inset: 0; transform-origin: 50% 50%; will-change: transform; }
 .canvas-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .canvas-nodes { position: absolute; inset: 0; }
 
@@ -654,8 +655,10 @@ textarea, input { font-family: var(--font-body); }
 
         <!-- CANVAS -->
         <main class="canvas-wrap" id="canvasWrap">
-            <svg class="canvas-svg" id="canvasSvg" xmlns="http://www.w3.org/2000/svg"></svg>
-            <div class="canvas-nodes" id="canvasNodes"></div>
+            <div id="mapTransform">
+                <svg class="canvas-svg" id="canvasSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+                <div class="canvas-nodes" id="canvasNodes"></div>
+            </div>
 
             <div class="canvas-empty" id="canvasEmpty">
                 <div class="canvas-empty-title">Your idea map</div>
@@ -822,8 +825,9 @@ let _nodeId = 0;
 const nextId = () => 'n' + (++_nodeId);
 let currentBranches = [];
 
-// Pan state
+// Pan + zoom state
 let pan = { x: 0, y: 0 };
+let zoom = 1;
 let _panActive = false, _panMoved = false;
 let _dragStart = { x: 0, y: 0 }, _panStart = { x: 0, y: 0 };
 
@@ -980,9 +984,8 @@ async function addBranch(idx) {
 
     repositionSiblings(parentId);
     resolveCollisions();
-    renderMindMap();
+    fitToCanvas();
     updateMapOverview();
-    panToNode(newNode);
     showExplorePanel(newNode.id);
 }
 
@@ -1005,9 +1008,8 @@ function addCustomBranch() {
     document.getElementById('customBranchTa').value = '';
     repositionSiblings(parentId);
     resolveCollisions();
-    renderMindMap();
+    fitToCanvas();
     updateMapOverview();
-    panToNode(newNode);
     showExplorePanel(newNode.id);
 }
 
@@ -1159,7 +1161,6 @@ let tooltipNodeId = null;
 function onNodeClick(ax, ay, node) {
     hideNodeTooltip();
     showExplorePanel(node.id);
-    panToNode(node, false);
 }
 
 function onNodeRightClick(e, ax, ay, node) {
@@ -1288,8 +1289,13 @@ function renderMindMap() {
     const container = document.getElementById('canvasNodes');
     const svg       = document.getElementById('canvasSvg');
     const canvas    = document.getElementById('canvasWrap');
-    const cx = canvas.offsetWidth  / 2 + pan.x;
-    const cy = canvas.offsetHeight / 2 + pan.y;
+    const wrapper   = document.getElementById('mapTransform');
+
+    // Pan + zoom via CSS transform on wrapper; node coords are relative to canvas center only
+    wrapper.style.transform = `translate(${pan.x}px,${pan.y}px) scale(${zoom})`;
+
+    const cx = canvas.offsetWidth  / 2;
+    const cy = canvas.offsetHeight / 2;
 
     container.innerHTML = '';
     svg.innerHTML       = '';
@@ -1394,13 +1400,35 @@ window.addEventListener('resize', () => {
 });
 
 /* ============================================================
-   PAN TO NODE
+   FIT ALL NODES TO CANVAS
    ============================================================ */
-function panToNode(node) {
-    if (!node) return;
+function fitToCanvas() {
     const canvas = document.getElementById('canvasWrap');
-    pan.x = -node.x + canvas.offsetWidth  * 0.05;
-    pan.y = -node.y + canvas.offsetHeight * 0.05;
+    const W = canvas.offsetWidth, H = canvas.offsetHeight;
+    if (!W || !H || nodes.length === 0) { zoom = 1; pan = { x: 0, y: 0 }; renderMindMap(); return; }
+
+    const NW = 100, NH = 45; // approx half-dimensions of a node
+    const MARGIN = 80;
+
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    nodes.forEach(n => {
+        minX = Math.min(minX, n.x - NW);
+        maxX = Math.max(maxX, n.x + NW);
+        minY = Math.min(minY, n.y - NH);
+        maxY = Math.max(maxY, n.y + NH);
+    });
+
+    const bboxW  = maxX - minX;
+    const bboxH  = maxY - minY;
+    const bboxCx = (minX + maxX) / 2;
+    const bboxCy = (minY + maxY) / 2;
+
+    zoom = Math.min(1, Math.min((W - 2 * MARGIN) / bboxW, (H - 2 * MARGIN) / bboxH));
+    zoom = Math.max(0.28, zoom);
+
+    pan.x = -bboxCx * zoom;
+    pan.y = -bboxCy * zoom;
+
     renderMindMap();
 }
 
